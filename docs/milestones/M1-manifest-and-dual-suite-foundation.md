@@ -1,7 +1,7 @@
 # M1 — Manifest-driven ROM library foundation
 
 Recorded: 2026-11-23
-Status: PLANNED (not implemented, not validated)
+Status: Implemented for the documented single-file allowlist. Host and Ubuntu tests passed. Physical Steam Deck validation remains open. The checklists below preserve the original planning record.
 Branch: feature/emudeck-retrodeck-integration
 Parent spec: docs/emudeck-retrodeck-integration.md
 Priority: P0
@@ -81,4 +81,4 @@ Implement a lean, secure local ROM catalog and installer for Steam Deck with **e
 
 M1 can be marked complete only after code and automated tests exist for the manifest, both verified path adapters, the safe install/reconcile CLI, and committed review/benchmark results. Production-level dual-suite compatibility remains gated on physical Steam Deck tests.
 
-**Recorded status: SPECIFICATION LOGGED ONLY; executable implementation not yet done.**
+Current implementation, CI evidence, independent review and remaining release gates are recorded in the [verification report](../verification.md).

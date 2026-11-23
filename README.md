@@ -2,7 +2,7 @@
 
 A tiny, ani-cli-style command-line tool to **search and download legal ROMs, homebrew, and public-domain games** straight from the [Internet Archive](https://archive.org).
 
-No scraping, no copyrighted/commercial sources — it talks only to the public Internet Archive API and restricts searches to openly-licensed / public-domain / homebrew collections.
+The interactive downloader uses the public Internet Archive API or a self-hosted mirror. The optional library commands install authorized single-file games into a configured EmuDeck or RetroDECK library and record them in SQLite. Consult the [library guide](docs/library.md), [format matrix](docs/phase1.md) and [verification report](docs/verification.md).
 
 ```
 search → fzf menu → pick item → pick file(s) → aria2 download → done
@@ -12,9 +12,9 @@ search → fzf menu → pick item → pick file(s) → aria2 download → done
 
 - 🔎 Fuzzy search via `fzf`, just like ani-cli
 - 📦 Multi-file selection within an archive item (`TAB` to mark)
-- ⚡ Fast, resumable, parallel downloads via `aria2`
+- Parallel transfers via `aria2` into private staging
 - 🧩 Configurable collections — point it at any IA collection you like
-- 🐧 Pure Bash, no runtime beyond the four deps
+- Bash search and download workflow, plus Python standard-library catalog commands
 
 ## Dependencies
 
@@ -23,26 +23,23 @@ search → fzf menu → pick item → pick file(s) → aria2 download → done
 - `fzf`
 - `aria2`
 
-On CachyOS / Arch:
-
-```bash
-sudo pacman -S curl jq fzf aria2
-```
+Library commands use Python 3.9+ with SQLite and Linux procfs. They work independently of the interactive downloader dependencies.
 
 ## Install
 
-### From the AUR-style PKGBUILD
+### SteamOS Desktop Mode
 
 ```bash
-git clone https://github.com/PaceTea/rom-cli.git
-cd rom-cli
-makepkg -si
+git clone --branch feature/emudeck-retrodeck-integration https://github.com/Dukeraider2/rom-cli-sd.git
+cd rom-cli-sd
+./rom-cli --library platforms
 ```
 
-### Manual
+To make the checkout available on your user PATH, link the launcher. Keep the checkout in place.
 
 ```bash
-sudo install -Dm755 rom-cli /usr/bin/rom-cli
+mkdir -p ~/.local/bin
+ln -s "$PWD/rom-cli" ~/.local/bin/rom-cli
 ```
 
 ## Usage

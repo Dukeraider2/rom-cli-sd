@@ -1,6 +1,6 @@
 # EmuDeck + RetroDECK integration specification (draft v0.1)
 
-Status: design only; no compatibility claims or executable changes yet.
+Original design baseline. For implemented scope and device-validation status, see the [compatibility matrix](phase1.md) and [verification report](verification.md).
 
 ## Goal
 First-class, equal support for EmuDeck and RetroDECK ROM placement from the standalone CLI and a future Decky Loader UI. Only download/install content users are authorized to obtain.
