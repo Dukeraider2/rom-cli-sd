@@ -10,6 +10,8 @@ search → fzf menu → pick item → pick file(s) → aria2 download → done
 
 ## Features
 
+The [Decky Gaming Mode plugin](decky/README.md) adds controller-driven search, destination confirmation, downloads and library inspection. Physical Steam Deck acceptance is pending. See the [M2 verification report](docs/m2-verification.md).
+
 - 🔎 Fuzzy search via `fzf`, just like ani-cli
 - 📦 Multi-file selection within an archive item (`TAB` to mark)
 - Parallel transfers via `aria2` into private staging

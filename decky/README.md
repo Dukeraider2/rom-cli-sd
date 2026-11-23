@@ -1,17 +1,64 @@
-# Decky backend milestone
+# ROM Library for Decky
 
-The current backend runs one requested operation and exits. The library CLI is available without a plugin. Build the prototype against named methods and version its response schema before exposing it to Gaming Mode. Use the [official template](https://github.com/SteamDeckHomebrew/decky-plugin-template) for frontend calls and backend events.
+ROM Library 0.2.0 is a hardware-validation build for a Steam Deck with an existing Decky installation. It uses the logged-in user's M1 catalog and supports EmuDeck and RetroDECK. Both suites use their configured ROM roots and the M1 format allowlist.
 
-| Method | Inputs and returned information | Implementation |
+## Install or build
+
+Download the feature branch's **rom-library-m2** CI artifact. Extract the outer GitHub artifact once and select the inner `rom-library-m2.zip` in Decky Settings → Developer → Install plugin from ZIP. Enable Decky developer settings if necessary. Use the same ZIP when testing a locally built copy. The plugin requests no root flag. The [official installation guidance](https://github.com/SteamDeckHomebrew/decky-loader) and [Decky sideloading notes](https://github.com/SteamDeckHomebrew/wiki/blob/main/user-guide/plugin-safety.md) describe the loader and external ZIP workflow.
+
+From the repository root, with Node 22+, npm and Python available:
+
+```sh
+npm ci --prefix decky --ignore-scripts
+npm --prefix decky run check
+npm --prefix decky test
+npm --prefix decky run build
+python3 decky/package_plugin.py decky/rom-library-m2.zip
+```
+
+The ZIP includes the frontend bundle, corresponding sources, Python backend, M1 library and license notices. TypeScript uses the official Decky React components and callable API. Development dependencies and Node stay on the build machine.
+
+## Search, install and play
+
+1. Open **ROM Library** in the Quick Access menu. Enter a title with the Steam keyboard (Steam + X), select a provider and optionally filter by console.
+2. Choose a file, then its console and destination suite. For Archive, each source page represents an item. **More files in this item** pages through its supported files. Empty pages can occur after format filtering.
+3. Review the source, filename, size, available checksum, duplicate warning and exact destination. Activate **I’m authorized · Download and install** to enqueue. Back returns to the previous selection. Collection membership supplies provenance only.
+4. Open **Downloads** for progress and cancellation. Retry starts with fresh bytes. Cancellation stops being available when installation begins. A completed job has passed final file and manifest verification.
+5. Reopen ES-DE in the selected suite, select the game and launch it there. Use the ES-DE metadata editor's scraper for artwork. For Steam shortcuts use Steam ROM Manager's parser, preview and save workflow. **Installed library** shows recorded installation paths and offers read-only console checks, including consoles with no recorded games.
+
+## Optional mirror
+
+Internet Archive works independently of a mirror. For a user-controlled mirror, create `mirror.json` in this plugin's Decky settings directory in Desktop Mode, then reload the plugin. Decky supplies the directory as `DECKY_PLUGIN_SETTINGS_DIR`. The configuration must belong to the SteamOS account and allow writes only by its owner.
+
+```json
+{"base":"https://mirror.example.org/roms/","allow_private":false}
+```
+
+For your own LAN or loopback server, set its exact base URL and explicitly set `allow_private` to `true`. Use a trailing slash and a simple HTML directory listing of ROM files or one level of supported console folders. A selected folder such as `gba/` narrows supported files. Credentials, arbitrary child pages, external redirects and query-string links are unsupported. Mirror indexes often omit digests and sizes; transfer counts become available from HTTP where supplied.
+
+## Recovery and troubleshooting
+
+- **No destination or format unavailable.** Confirm the suite is installed and initialized, its actual ROM directory is mounted, the console directory exists, and the account can write it. Check RetroDECK's effective Flatpak access. The backend never changes grants or creates a missing ROM directory.
+- **Destination changed.** Remount the original medium, or search again and explicitly confirm the new location. The job stores the directory path, device and inode at confirmation.
+- **Existing filename or checksum match.** The installer checks the filesystem and rejects conflicting content. For a destination with unknown source SHA-256 the plugin stops before transfer. A known SHA-256 can validate an existing file. Use the library view to inspect the recorded installation.
+- **Interrupted or cancelled job.** Review the destination, then use **Confirm retry**. On Linux the next attempt can reclaim that job's recorded abandoned staging file after checking owner and inode. Read-only preview and the M1 CLI recovery tools are available for further inspection. A process killed before the temporary file identity was recorded can leave a part requiring manual review.
+- **Untrusted account or storage.** The plugin refuses root, mismatched Decky/OS accounts and linked or shared-write catalog directories. Keep the manifest and job database in private user storage. The standalone CLI remains usable without loading Decky.
+
+## Removal and rollback
+
+Let installation finish, cancel queued transfers and unload the plugin through Decky. Use the CLI's online `--library backup NEW_FILE` command before testing. For a complete rollback snapshot with every writer stopped, copy the entire user-owned `rom-cli-sd` data directory, including SQLite sidecars and job history, to a separate backup. Decky's uninstall action removes the plugin package. ROMs and the shared M1 manifest persist. Reinstall the previous trusted ZIP or continue with the standalone CLI. Restore a backup into a fresh data directory while all writers are stopped. Review any files installed since the backup separately. No system partition edits are required.
+
+## Physical acceptance matrix
+
+| Check | EmuDeck | RetroDECK |
 |---|---|---|
-| list_platforms / list_consoles | Suite enum, configured root, status, writable flag, allowed suffixes | Adapt platforms and consoles |
-| list_games / inspect_game | Game ID, release fields and recorded installations | Adapt games and inspect, add pagination |
-| reconcile | Suite, optional console, optional expected root | Read-only report available |
-| search | Source ID, bounded text and page | Planned IA and configured mirror providers |
-| enqueue / cancel / get_progress | Confirmed result ID, suite, console and metadata; job ID, state and byte counts | Planned worker and bounded queue. Current install is synchronous |
-| duplicate decision | Existing path and checksum, cancel or select another allowed destination | Translate current duplicate errors to typed responses |
+| Record actual SteamOS, Steam client, Decky and suite versions | BLOCKED | BLOCKED |
+| Discover internal, custom and microSD paths; verify effective access | BLOCKED | BLOCKED |
+| Controller/OSK search, focus, Back, confirmation and progress | BLOCKED | BLOCKED |
+| Authorized fixture install, duplicate, reconcile and emulator launch | BLOCKED | BLOCKED |
+| Remove/remount test medium, verify failure and retry, unload/reload | BLOCKED | BLOCKED |
 
-The frontend supplies enums and opaque search-result IDs. The backend resolves URLs, derives paths, enforces allowed operations and returns typed errors. Do not expose shell commands, raw SQL, filesystem browsing, user-supplied URLs or an arbitrary CLI argument array as a plugin RPC. Resolve the unprivileged SteamOS user explicitly before writing any data. Implement progress throttling, cancellation cleanup and serialized downloads. Exercise permission, library and controller navigation on hardware before distributing a plugin.
+Run read-only discovery and backup first. Use an approved disposable library and removable medium for write and interruption tests. Record versions, paths, file digests, job state, launch outcome and observed UI latency for each row. An unattended action against a personal ROM collection is outside this procedure.
 
-A later optional voice method accepts push-to-talk audio for local transcription, then feeds text into the same search method. Release the microphone and unload idle models. Require controller confirmation of the result and destination before enqueue. Keep whisper.cpp and Piper behind optional local providers, disabled by default. Use ES-DE's existing manual scraper for artwork.
+Voice and TTS remain M3. See the repository's M2 verification report for host measurements and residual risks.
 
