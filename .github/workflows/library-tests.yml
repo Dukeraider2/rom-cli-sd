@@ -13,4 +13,14 @@ jobs:
       - run: python3 -B -m unittest discover -s tests -v
       - run: bash -n rom-cli && bash -n PKGBUILD
       - run: bash rom-cli --version && bash rom-cli --library platforms
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix decky --ignore-scripts
+      - run: npm --prefix decky run check && npm --prefix decky test && npm --prefix decky run build
+      - run: python3 decky/package_plugin.py decky/rom-library-m2.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rom-library-m2
+          path: decky/rom-library-m2.zip
 
