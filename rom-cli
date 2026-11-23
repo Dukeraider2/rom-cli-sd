@@ -65,6 +65,7 @@ ${c_grn}rom-cli${c_reset} $VERSION — legal ROM / homebrew downloader (Internet
 
 ${c_yel}USAGE${c_reset}
     rom-cli [options] [search query]
+    rom-cli --library COMMAND [options]
 
 ${c_yel}OPTIONS${c_reset}
     -d, --download-dir DIR   download target (default: $ROM_CLI_DOWNLOAD_DIR)
@@ -305,6 +306,12 @@ download_files() {
 # Main
 # ----------------------------------------------------------------------------
 main() {
+    if [[ ${1:-} == --library ]]; then
+        shift
+        local base
+        base=$(dirname -- "$(realpath -- "${BASH_SOURCE[0]}")")
+        exec python3 -I "$base/library-entry.py" "$@"
+    fi
     local query=""
     while [[ $# -gt 0 ]]; do
         case "$1" in
