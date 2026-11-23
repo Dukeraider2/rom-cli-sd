@@ -1,7 +1,7 @@
 name: M3A offline transcription tests
 on:
   push:
-    branches: [feature/m3a-offline-title-transcription]
+    branches: [feature/m3a-offline-title-transcription, feature/m3a2-recognition-reliability]
   pull_request:
 permissions:
   contents: read

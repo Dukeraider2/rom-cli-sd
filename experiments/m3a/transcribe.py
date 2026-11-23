@@ -25,6 +25,8 @@ MODELS = {
 MAX_AUDIO_BYTES = 512 * 1024
 MAX_DURATION_SECONDS = 10
 MAX_OUTPUT_BYTES = 4096
+SHA256 = {"tiny.en":"921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f",
+          "base.en":"a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002"}
 
 
 class TranscriptionError(Exception):
@@ -52,6 +54,8 @@ def validate_audio(path: Path) -> dict:
             if (wav.getnchannels(), wav.getsampwidth(), wav.getframerate(), wav.getcomptype()) != (1, 2, 16000, "NONE"):
                 raise TranscriptionError("invalid_audio", "Expected mono 16 kHz 16-bit PCM WAV")
             frames = wav.getnframes()
+            if 0 < frames <= MAX_DURATION_SECONDS * 16000 and len(wav.readframes(frames)) != frames*2:
+                raise TranscriptionError("invalid_audio","Truncated PCM payload")
         if frames < 1 or frames > MAX_DURATION_SECONDS * 16000:
             raise TranscriptionError("invalid_audio", "WAV duration must be >0 and <=10 seconds")
         return {"bytes": size, "duration_seconds": frames / 16000}
@@ -94,7 +98,10 @@ def _terminate(process: subprocess.Popen) -> None:
 
 class WhisperAdapter:
     def __init__(self, engine: Path, models_dir: Path, *, threads: int = 4,
-                 timeout_seconds: float = 45, strict_hashes: bool = True):
+                 timeout_seconds: float = 45, strict_hashes: bool = True, decoder: str = "beam"):
+        if decoder not in ("beam","greedy"):
+            raise ValueError("unknown decoder")
+        self.decoder = decoder
         if not isinstance(threads, int) or not 1 <= threads <= 8:
             raise ValueError("threads must be 1..8")
         if not 0 < timeout_seconds <= 120:
@@ -114,14 +121,14 @@ class WhisperAdapter:
         if path.is_symlink() or not path.is_file():
             raise TranscriptionError("missing_model", "Model file is missing or linked")
         st = path.stat()
-        identity = (st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns)
+        identity = (st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns, st.st_ctime_ns)
         cached = self._verified.get(model_id)
         if cached and cached[0] == identity:
             return path, cached[1]
-        if self.strict_hashes and digest(path, "sha1") != MODELS[model_id]:
-            raise TranscriptionError("invalid_model", "Model SHA-1 does not match pinned upstream artifact")
         metadata = {"size_bytes": st.st_size, "sha1": digest(path, "sha1"),
                     "sha256": digest(path, "sha256")}
+        if self.strict_hashes and (metadata["sha1"] != MODELS[model_id] or metadata["sha256"] != SHA256[model_id]):
+            raise TranscriptionError("invalid_model", "Model digest does not match pinned artifact")
         self._verified[model_id] = (identity, metadata)
         return path, metadata
 
@@ -151,7 +158,8 @@ class WhisperAdapter:
             # Never persist unbounded engine stdout/stderr in temporary storage.
             args = [str(self.engine), "-m", str(model.resolve()), "-f", str(clip.resolve()),
                     "-l", "en", "-t", str(self.threads), "-ng", "-nf", "-sns",
-                    "-tp", "0", "-tpi", "0", "-bs", "5", "-bo", "5",
+                    "-tp", "0", "-tpi", "0", "-bs", "5" if self.decoder=="beam" else "1",
+                    "-bo", "5" if self.decoder=="beam" else "1",
                     "-otxt", "-of", str(stem)]
             start = time.monotonic()
             before = resource.getrusage(resource.RUSAGE_CHILDREN)
@@ -193,7 +201,7 @@ class WhisperAdapter:
                        "model_size_bytes": metadata["size_bytes"], "model_sha256": metadata["sha256"]}
             if reason:
                 return {"ok": False, "error": {"code": reason, "message": "Transcription " + reason}, "metrics": metrics}
-            if process.returncode != 0 or not output.is_file():
+            if process.returncode != 0 or output.is_symlink() or not output.is_file():
                 return {"ok": False, "error": {"code": "engine_failure", "message": "Engine failed or produced no transcript file"}, "metrics": metrics}
             if output.stat().st_size > MAX_OUTPUT_BYTES:
                 return {"ok": False, "error": {"code": "invalid_output", "message": "Transcript exceeds output limit"}, "metrics": metrics}

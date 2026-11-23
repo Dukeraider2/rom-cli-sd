@@ -53,14 +53,14 @@ def noise(count: int, seed: int) -> list[int]:
     return [rng.randint(-1800, 1800) for _ in range(count)]
 
 
-def synthesize(title: str, destination: Path) -> None:
+def synthesize(title: str, destination: Path, voice="en-us", rate=155) -> None:
     espeak = shutil.which("espeak")
     ffmpeg = shutil.which("ffmpeg")
     if not espeak or not ffmpeg:
         raise RuntimeError("Speech fixtures require local espeak and ffmpeg")
     with tempfile.TemporaryDirectory(prefix="m3a-speech-") as folder:
         original = Path(folder) / "speech.wav"
-        subprocess.run([espeak, "-v", "en-us", "-s", "155", "-w", str(original), title],
+        subprocess.run([espeak, "-v", voice, "-s", str(rate), "-w", str(original), title],
                        check=True, stdout=subprocess.DEVNULL, timeout=30)
         subprocess.run([ffmpeg, "-nostdin", "-hide_banner", "-loglevel", "error",
                         "-y", "-i", str(original), "-ar", "16000", "-ac", "1",

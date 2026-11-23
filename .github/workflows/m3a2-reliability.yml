@@ -1,0 +1,57 @@
+name: M3A2 paired synthetic reliability
+on:
+  push:
+    branches: [feature/m3a2-recognition-reliability]
+    paths: ['experiments/m3a/*.py','.github/workflows/m3a2-reliability.yml']
+permissions:
+  contents: read
+jobs:
+  engine:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Build verified upstream CLI once
+        run: |
+          git init -q upstream
+          git -C upstream fetch -q --depth 1 https://github.com/ggml-org/whisper.cpp.git 96ec4d9823e9d0211944172da35f9f29134af990
+          git -C upstream checkout -q --detach FETCH_HEAD
+          test "$(git -C upstream rev-parse HEAD)" = 96ec4d9823e9d0211944172da35f9f29134af990
+          cmake -S upstream -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DGGML_NATIVE=OFF -DGGML_VULKAN=OFF
+          cmake --build build --target whisper-cli -j 4
+          build/bin/whisper-cli --help 2>&1 | head -100
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m3a2-engine
+          path: build/bin/whisper-cli
+          retention-days: 1
+  compare:
+    needs: engine
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [tiny.en, base.en]
+        config: [beam4, greedy4, beam2, gate4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: m3a2-engine
+          path: bin
+      - name: Acquire explicit experiment prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq espeak ffmpeg
+          chmod +x bin/whisper-cli
+          mkdir -p models
+          curl --fail --location --retry 3 -o models/ggml-${{ matrix.model }}.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${{ matrix.model }}.bin
+      - name: Generate local corpus and measure fresh processes
+        run: |
+          python3 -m experiments.m3a.reliability_fixtures --output "$RUNNER_TEMP/fixtures"
+          python3 -m experiments.m3a.reliability --engine bin/whisper-cli --models-dir models --fixtures "$RUNNER_TEMP/fixtures" --model ${{ matrix.model }} --config ${{ matrix.config }} --output results/${{ matrix.model }}-${{ matrix.config }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: measurements-${{ matrix.model }}-${{ matrix.config }}
+          path: results/*.json
+          if-no-files-found: error
