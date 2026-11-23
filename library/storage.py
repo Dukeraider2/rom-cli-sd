@@ -39,7 +39,12 @@ def regular(path):
     return os.fdopen(fd, "rb")
 
 
-def digest(path):
+def fingerprint(stat_result):
+    return ":".join(str(value) for value in (stat_result.st_dev,stat_result.st_ino,
+                    stat_result.st_size,stat_result.st_ctime_ns,stat_result.st_mtime_ns))
+
+
+def digest(path, *, with_stamp=False):
     with regular(path) as stream:
         before = os.fstat(stream.fileno())
         sha = hashlib.sha256()
@@ -50,7 +55,8 @@ def digest(path):
         if (not os.path.samestat(after, now) or before.st_size != after.st_size
                 or before.st_mtime_ns != after.st_mtime_ns or before.st_ctime_ns != after.st_ctime_ns):
             raise ValueError("file changed during verification")
-        return sha.hexdigest(), after.st_size
+        result = sha.hexdigest(), after.st_size
+        return (*result, fingerprint(after)) if with_stamp else result
 
 
 def checked_leaf(folder, path):

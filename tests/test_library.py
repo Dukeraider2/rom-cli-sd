@@ -37,9 +37,9 @@ class LibraryTests(unittest.TestCase):
         self.put(region="USA",disc=1,probe=lambda *_:"read-write")
         self.assertEqual(self.db.execute("SELECT count(*) FROM locations").fetchone()[0],1)
         self.row["platform"]="emudeck"
-        self.src.write_bytes(b"disc 2")
+        self.src.write_bytes(b"MComprHDdisc 2")
         self.put(region="USA",disc=2)
-        self.src.write_bytes(b"EU")
+        self.src.write_bytes(b"MComprHDEU")
         self.put(region="EU",disc=1)
         self.assertEqual(self.db.execute("SELECT count(*) FROM releases").fetchone()[0],2)
         self.assertTrue(Path(first["path"]).is_file())
@@ -48,7 +48,7 @@ class LibraryTests(unittest.TestCase):
         target = Path(self.put()["path"])
         with self.assertRaises(ValueError):
             self.put(title="Another title")
-        self.src.write_bytes(b"new content")
+        self.src.write_bytes(b"MComprHDnew content")
         with self.assertRaises(FileExistsError):
             self.put()
         self.assertNotEqual(target.read_bytes(), self.src.read_bytes())

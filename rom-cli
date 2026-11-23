@@ -196,6 +196,7 @@ mirror_list() {
     local base="${ROM_CLI_MIRROR%/}"
     local query="$1"
     local listing=""
+    [[ "$base" =~ ^https?:// ]] || die "mirror must use HTTP or HTTPS"
 
     # Fetch top-level index
     local top
@@ -204,6 +205,7 @@ mirror_list() {
     # Collect entries. Directories (href ending in /) get walked one level deep.
     local href
     while IFS= read -r href; do
+        safe_mirror_segment "${href%/}" || continue
         # skip parent/sort links and absolute URLs to elsewhere
         [[ "$href" == "../" || "$href" == "/" || "$href" == \?* ]] && continue
         [[ "$href" == http*://* ]] && continue
@@ -215,6 +217,7 @@ mirror_list() {
             sub=$(curl -fsSL "${base}/${href}" 2>/dev/null) || continue
             local f
             while IFS= read -r f; do
+                safe_mirror_segment "$f" || continue
                 [[ "$f" == "../" || "$f" == "/" || "$f" == \?* || "$f" == */ ]] && continue
                 [[ "$f" == http*://* ]] && continue
                 listing+="${subdir}/${f}"$'\n'
@@ -248,56 +251,52 @@ pick_mirror_files() {
     || true
 }
 
-download_mirror_files() {
-    local base="${ROM_CLI_MIRROR%/}"
-    shift_dummy=0
-    local -a files=("$@")
-    local dest="${ROM_CLI_DOWNLOAD_DIR}/mirror"
-    mkdir -p "$dest"
+safe_mirror_segment() {
+    local part="$1" lower="${1,,}"
+    [[ -n "$part" && "$part" != .* && "$part" != */* && "$part" != *\\* &&
+       "$part" != *[[:cntrl:]]* && "$part" != *'?'* && "$part" != *'#'* &&
+       "$part" != *:* && "$lower" != *%2f* && "$lower" != *%5c* &&
+       "$lower" != *%2e* && "$lower" != *%25* ]]
+}
 
-    for rel in "${files[@]}"; do
-        [[ -n "$rel" ]] || continue
-        local url="${base}/${rel}"
-        local out
-        out=$(basename "$rel")
+# A private staging directory prevents aria2 from resuming an unrelated file.
+# Link publication fails atomically when the chosen leaf already exists.
+download_one() (
+    set -e
+    local dest="$1" out="$2" url="$3" stage
+    [[ -n "$out" && "$out" != .* && "$out" != */* && "$out" != *\\* &&
+       "$out" != *[[:cntrl:]]* ]] || die "invalid output filename"
+    [[ ! -L "$dest" ]] || die "linked download directory"
+    mkdir -p -- "$dest"
+    [[ ! -e "$dest/$out" && ! -L "$dest/$out" ]] || die "file already exists: $out"
+    stage=$(mktemp -d -- "$dest/.rom-cli-XXXXXXXX")
+    trap 'rm -f -- "$stage/payload" "$stage/payload.aria2"; rmdir -- "$stage"' EXIT
+    aria2c --no-conf=true --follow-torrent=false --follow-metalink=false \
+        --dir="$stage" --out=payload --max-connection-per-server="$ROM_CLI_CONNECTIONS" \
+        --split="$ROM_CLI_CONNECTIONS" --auto-file-renaming=false --allow-overwrite=false \
+        --summary-interval=0 --console-log-level=warn -- "$url"
+    ln -T -- "$stage/payload" "$dest/$out"
+)
+
+download_mirror_files() {
+    local rel base="${ROM_CLI_MIRROR%/}" dest="${ROM_CLI_DOWNLOAD_DIR}/mirror"
+    for rel in "$@"; do
         msg "downloading: $rel"
-        aria2c \
-            --dir="$dest" \
-            --out="$out" \
-            --max-connection-per-server="$ROM_CLI_CONNECTIONS" \
-            --split="$ROM_CLI_CONNECTIONS" \
-            --continue=true \
-            --auto-file-renaming=false \
-            --summary-interval=0 \
-            --console-log-level=warn \
-            "$url" || warn "failed: $rel"
+        download_one "$dest" "${rel##*/}" "$base/$rel"
     done
     msg "done → $dest"
 }
 
-# ----------------------------------------------------------------------------
-# Download chosen files with aria2
-# ----------------------------------------------------------------------------
 download_files() {
-    local identifier="$1"; shift
-    local -a files=("$@")
-    local dest="${ROM_CLI_DOWNLOAD_DIR}/${identifier}"
-    mkdir -p "$dest"
-
-    for f in "${files[@]}"; do
-        [[ -n "$f" ]] || continue
-        local url="${IA_DL}/${identifier}/${f}"
+    local identifier="$1" f encoded dest
+    shift
+    [[ "$identifier" =~ ^[A-Za-z0-9_-][A-Za-z0-9._-]*$ ]] || die "invalid item identifier"
+    dest="${ROM_CLI_DOWNLOAD_DIR}/${identifier}"
+    for f in "$@"; do
+        [[ "$f" != /* && "$f" != *\\* && "/$f/" != *'/../'* && "/$f/" != *'/./'* ]] || die "invalid item path"
+        encoded=$(jq -rn --arg name "$f" '$name | split("/") | map(@uri) | join("/")')
         msg "downloading: $f"
-        aria2c \
-            --dir="$dest" \
-            --out="$f" \
-            --max-connection-per-server="$ROM_CLI_CONNECTIONS" \
-            --split="$ROM_CLI_CONNECTIONS" \
-            --continue=true \
-            --auto-file-renaming=false \
-            --summary-interval=0 \
-            --console-log-level=warn \
-            "$url" || warn "failed: $f"
+        download_one "$dest" "${f##*/}" "$IA_DL/$identifier/$encoded"
     done
     msg "done → $dest"
 }
@@ -358,6 +357,7 @@ main() {
     [[ -n "$id" ]] || { warn "cancelled"; exit 0; }
 
     info "selected: $id"
+    [[ "$id" =~ ^[A-Za-z0-9_-][A-Za-z0-9._-]*$ ]] || die "invalid item identifier"
     local chosen
     mapfile -t chosen < <(pick_files "$id")
     ((${#chosen[@]})) || { warn "no files selected"; exit 0; }

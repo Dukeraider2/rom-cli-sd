@@ -21,7 +21,34 @@ CREATE INDEX files_content ON files(content_id);
 CREATE INDEX installations_location ON installations(location_id);
 """
 TABLES = "games aliases releases contents files locations installations downloads artwork".split()
-VERSION = 2
+JOBS = """
+ALTER TABLE downloads ADD COLUMN folder TEXT;
+ALTER TABLE downloads ADD COLUMN platform TEXT;
+ALTER TABLE downloads ADD COLUMN stage TEXT;
+ALTER TABLE downloads ADD COLUMN stage_dev TEXT;
+ALTER TABLE downloads ADD COLUMN stage_ino TEXT;
+ALTER TABLE downloads ADD COLUMN owner TEXT;
+ALTER TABLE downloads ADD COLUMN installation_id INTEGER REFERENCES installations ON DELETE SET NULL;
+CREATE INDEX downloads_recovery ON downloads(platform,folder,status);
+"""
+FINGERPRINT = "ALTER TABLE locations ADD COLUMN fingerprint TEXT"
+VERSION = 4
+
+
+def catalog_reader(path=None):
+    path = Path(path or default_path())
+    if not path.exists():
+        db = sqlite3.connect(":memory:")
+        db.executescript(SCHEMA + INDEXES + JOBS + FINGERPRINT)
+    else:
+        db = sqlite3.connect(path.resolve().as_uri()+"?mode=ro", uri=True, timeout=8)
+        if db.execute("PRAGMA user_version").fetchone()[0] != VERSION:
+            db.close()
+            raise ValueError("manifest version differs; run --library init to migrate a supported catalog")
+    db.row_factory = sqlite3.Row
+    db.execute("PRAGMA trusted_schema=OFF")
+    db.execute("PRAGMA query_only=ON")
+    return db
 
 
 def default_path():
@@ -48,7 +75,7 @@ def connect(path=None):
                 version = db.execute("PRAGMA user_version").fetchone()[0]
                 if version == 0 and db.execute("SELECT 1 FROM sqlite_master LIMIT 1").fetchone():
                     raise ValueError("unrecognized database")
-                for script in (SCHEMA, INDEXES)[version:]:
+                for script in (SCHEMA, INDEXES, JOBS, FINGERPRINT)[version:]:
                     for statement in script.strip().split(";"):
                         if statement.strip():
                             db.execute(statement)

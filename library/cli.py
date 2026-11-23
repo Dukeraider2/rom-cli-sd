@@ -20,7 +20,7 @@ LIST = """SELECT i.id, g.id AS game_id,g.display_title,g.system,r.region,r.revis
 def parser():
     p = argparse.ArgumentParser(prog="rom-cli --library")
     subs = p.add_subparsers(dest="command",required=True)
-    for name in ("platforms","paths","consoles","install","verify","scan","reconcile","games",
+    for name in ("init","platforms","paths","consoles","install","verify","scan","reconcile","games",
                  "inspect","history","export","backup"):
         command = subs.add_parser(name)
         if name in ("install","verify","scan","reconcile","consoles"):
@@ -59,12 +59,15 @@ def run(args):
                 except (ValueError,OSError) as exc:
                     results.append(dict(system=system,error=str(exc)))
             return results
-    with closing(manifest.connect()) as db:
+    writable = op in ("install","init") or getattr(args,"confirm_pending",False)
+    with closing(manifest.connect() if writable else manifest.catalog_reader()) as db:
+        if op=="init":
+            return {"version":manifest.VERSION,"path":str(manifest.default_path())}
         if op=="install":
             return install(db,row,args.source,args.system,args.title,args.region or "",args.revision or "",
                            args.disc,args.sha256)
         if op in ("verify","scan","reconcile"):
-            records = scan(db,row,args.system,getattr(args,"confirm_pending",False))
+            records = scan(db,row,args.system,getattr(args,"confirm_pending",False),force_hash=op=="verify")
             if op=="scan":
                 return [r for r in records if r["status"]!="verified"]
             return records

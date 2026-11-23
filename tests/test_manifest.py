@@ -25,7 +25,7 @@ class ManifestTests(unittest.TestCase):
         with closing(sqlite3.connect(self.path)) as old:
             old.executescript(manifest.SCHEMA+"PRAGMA user_version=1;")
         with closing(manifest.connect(self.path)) as db:
-            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 2)
+            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], manifest.VERSION)
             self.assertTrue(db.execute("PRAGMA index_list(locations)").fetchall())
 
     def test_transaction_and_foreign_keys(self):
