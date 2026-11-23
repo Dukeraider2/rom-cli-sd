@@ -92,6 +92,9 @@ def run(args) -> dict:
         raise ValueError("Catalog must be a list of distinct titles")
     if manifest.get("schema") != 1 or not isinstance(manifest.get("clips"), list) or not manifest["clips"]:
         raise ValueError("Invalid fixture manifest")
+    if not args.mock and (manifest.get("fixture_mode") == "mock" or any(
+            c.get("provenance", {}).get("generator") == "test_tone" for c in manifest["clips"])):
+        raise ValueError("Mock-only fixtures cannot be used as real ASR evidence")
     if not 1 <= args.repeats <= 20:
         raise ValueError("repeats must be 1..20")
     adapter = WhisperAdapter(Path(args.engine), Path(args.models_dir), threads=args.threads,
