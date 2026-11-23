@@ -15,3 +15,9 @@ M2 already accepts editable text in its search screen, returns opaque file IDs a
 **Release decision.** Ship optional voice search only after the core workflow passes the M2 hardware gate for both suites and the M3 pilot demonstrates reliable stop/cancel, editable results and acceptable measured resource use. If microphone access requires elevated privileges or continuous listening, retain keyboard search and defer capture integration. The host prototype remains independently testable.
 
 [M2 progress and remaining gates](M2-gaming-mode-decky-integration.md) · [Physical test and rollback procedure](../../decky/README.md)
+
+## M3A implementation checkpoint (2026-11-23)
+
+The optional experiment lives in `experiments/m3a/` on `feature/m3a-offline-title-transcription`. The bounded offline adapter, reproducible fixture generator, two-model benchmark runner, fake-engine tests and independent CI workflow are implemented. No microphone capture, automatic search submission, download authority, or production plugin dependencies were introduced. See [M3A instructions](../../experiments/m3a/README.md).
+
+**M3A remains INCOMPLETE: collect more evidence.** The deterministic fake-engine tests are pipeline verification, not model accuracy. Real `tiny.en` and `base.en` model binaries, whisper.cpp executable and consented human recordings were not available in the development environment. No real ASR accuracy, host latency, Deck power or controller impact measurements are claimed. M2 physical validation retains release priority. Do not advance a model to M3B until real reproducible results and raw transcripts are reviewed.
