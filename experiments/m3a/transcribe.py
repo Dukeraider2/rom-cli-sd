@@ -148,7 +148,7 @@ class WhisperAdapter:
             temp = Path(folder)
             stem = temp / "transcript"
             output = temp / "transcript.txt"
-            log = temp / "engine.log"
+            # Never persist unbounded engine stdout/stderr in temporary storage.
             args = [str(self.engine), "-m", str(model.resolve()), "-f", str(clip.resolve()),
                     "-l", "en", "-t", str(self.threads), "-ng", "-nf", "-sns",
                     "-tp", "0", "-tpi", "0", "-bs", "5", "-bo", "5",
@@ -156,33 +156,32 @@ class WhisperAdapter:
             start = time.monotonic()
             before = resource.getrusage(resource.RUSAGE_CHILDREN)
             peak = None
-            with log.open("wb") as stream:
-                try:
-                    process = subprocess.Popen(args, stdin=subprocess.DEVNULL,
-                                               stdout=stream, stderr=subprocess.STDOUT,
-                                               start_new_session=(os.name == "posix"))
-                except OSError as exc:
-                    raise TranscriptionError("engine_failure", "Unable to launch engine") from exc
-                reason = None
-                try:
-                    while True:
-                        peak_now = _rss_bytes(process.pid)
-                        if peak_now is not None:
-                            peak = max(peak or 0, peak_now)
-                        if cancel is not None and cancel.is_set():
-                            reason = "cancelled"
-                            break
-                        if time.monotonic() - start >= self.timeout_seconds:
-                            reason = "timeout"
-                            break
-                        try:
-                            process.wait(timeout=0.025)
-                            break
-                        except subprocess.TimeoutExpired:
-                            pass
-                finally:
-                    if reason or process.poll() is None:
-                        _terminate(process)
+            try:
+                process = subprocess.Popen(args, stdin=subprocess.DEVNULL,
+                                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                           start_new_session=(os.name == "posix"))
+            except OSError as exc:
+                raise TranscriptionError("engine_failure", "Unable to launch engine") from exc
+            reason = None
+            try:
+                while True:
+                    peak_now = _rss_bytes(process.pid)
+                    if peak_now is not None:
+                        peak = max(peak or 0, peak_now)
+                    if cancel is not None and cancel.is_set():
+                        reason = "cancelled"
+                        break
+                    if time.monotonic() - start >= self.timeout_seconds:
+                        reason = "timeout"
+                        break
+                    try:
+                        process.wait(timeout=0.025)
+                        break
+                    except subprocess.TimeoutExpired:
+                        pass
+            finally:
+                if reason or process.poll() is None:
+                    _terminate(process)
             elapsed = time.monotonic() - start
             after = resource.getrusage(resource.RUSAGE_CHILDREN)
             cpu = (after.ru_utime + after.ru_stime) - (before.ru_utime + before.ru_stime)
