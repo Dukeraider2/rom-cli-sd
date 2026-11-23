@@ -1,6 +1,6 @@
 const parent = {
   results:"search", system:"results", destination:"system", confirm:"destination",
-  jobs:"search", library:"search", game:"library", report:"game"
+  jobs:"search", library:"search", game:"library", report:"game", checks:"library"
 };
 export function previous(screen) { return parent[screen] ?? "search"; }
 export function jobAction(state) {

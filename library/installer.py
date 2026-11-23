@@ -46,7 +46,8 @@ def reserve(db, platform, folder, filename, original, info, content, checksum, j
 
 
 def install(db, row, source, system=None, title=None, region="", revision="", disc=0, checksum=None,
-            probe=None, language="", edition="", transfer_options=None, phase=None, expected_folder=None):
+            probe=None, language="", edition="", transfer_options=None, phase=None, expected_folder=None,
+            on_attempt=None, require_known_existing=False):
     remote = "://" in source
     original = unquote(urlsplit(source).path.rsplit("/",1)[-1]) if remote else Path(source).name
     system = identify(original, system)
@@ -67,6 +68,8 @@ def install(db, row, source, system=None, title=None, region="", revision="", di
                          ("http" if remote else "local",item,str(folder),row["platform"],process_owner())).lastrowid
     info = display, normalized, system, region, revision, disc, language, edition
     try:
+        if on_attempt:
+            on_attempt(job)
         with pinned(folder) as handle:
             if expected_folder is not None:
                 current=handle.stat()
@@ -87,6 +90,8 @@ def install(db, row, source, system=None, title=None, region="", revision="", di
             if target.is_symlink():
                 raise ValueError("linked destination")
             if target.exists():
+                if require_known_existing and not checksum:
+                    raise FileExistsError("Destination exists and no trusted SHA-256 identifies it")
                 with regular(target) as stream:
                     validate(stream, Path(filename).suffix.lower())
                 existing = digest(target)

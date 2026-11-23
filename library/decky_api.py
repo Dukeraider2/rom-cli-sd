@@ -1,6 +1,7 @@
 """Version 1 RPC boundary. The client sends enums, bounded text and opaque IDs."""
 import re
 import sqlite3
+from http.client import HTTPException
 import time
 from contextlib import closing
 from threading import BoundedSemaphore,Lock
@@ -85,7 +86,7 @@ class Service:
             return {"version":1,"ok":True,"data":result}
         except RequestError as exc:
             code,message=exc.code,str(exc)
-        except (OSError,ValueError,sqlite3.Error) as exc:
+        except (OSError,ValueError,sqlite3.Error,HTTPException) as exc:
             code,message="unavailable",str(exc)[:300]
         except (KeyError,TypeError,AttributeError,RecursionError):
             code,message="invalid_source","Source metadata could not be read"
@@ -121,7 +122,7 @@ class Service:
             identity=preview.pop("identity")
             token=ident()
             self.remember(self.tokens,token,(data,a["platform"],a["system"],identity))
-            return dict(**preview,token=token)
+            return dict(**preview,token=token,file={k:v for k,v in data.items() if k!="url"})
         if op=="enqueue":
             values=self.recall(self.tokens,a["token"])
             return {"id":queue.enqueue(a["token"],*values)}
@@ -137,6 +138,10 @@ class Service:
                 return [dict(row) for row in db.execute(LIST+" ORDER BY g.normalized_title,i.id LIMIT 20 OFFSET ?",((a["page"]-1)*20,))]
             if op=="inspect_game":
                 return [dict(row) for row in db.execute(LIST+" WHERE g.id=? ORDER BY i.id LIMIT 100",(a["game"],))]
-            findings=scan(db,discover(a["platform"],queue.home),a["system"])
+            end=time.monotonic()+20
+            def checkpoint():
+                if queue.closing or time.monotonic()>end:
+                    raise RequestError("busy","Preview interrupted; use a targeted CLI scan")
+            findings=scan(db,discover(a["platform"],queue.home),a["system"],checkpoint=checkpoint,limit=1000)
             return dict(count=len(findings),findings=findings[:100])
 

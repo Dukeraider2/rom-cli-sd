@@ -64,7 +64,5 @@ class Plugin:
         service=getattr(self,"service",None)
         self.service=None
         if service:
-            while self.inflight:
-                await asyncio.sleep(.05)
             await asyncio.to_thread(service.queue.close)
 

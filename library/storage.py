@@ -44,11 +44,13 @@ def fingerprint(stat_result):
                     stat_result.st_size,stat_result.st_ctime_ns,stat_result.st_mtime_ns))
 
 
-def digest(path, *, with_stamp=False):
+def digest(path, *, with_stamp=False, checkpoint=None):
     with regular(path) as stream:
         before = os.fstat(stream.fileno())
         sha = hashlib.sha256()
         for chunk in iter(lambda: stream.read(1024*1024), b""):
+            if checkpoint:
+                checkpoint()
             sha.update(chunk)
         after = os.fstat(stream.fileno())
         now = path.lstat()

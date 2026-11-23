@@ -53,7 +53,8 @@ def transfer(source, stage, folder, *, opener=source_stream, progress=None, expe
             progress(0,length)
         if length is not None and (length <= 0 or length > LIMIT or length > shutil.disk_usage(folder).free):
             raise ValueError("invalid source size or insufficient space")
-        for block in iter(lambda: stream.read(1024*1024), b""):
+        read=getattr(stream,"read1",stream.read) if progress else stream.read
+        for block in iter(lambda: read(1024*1024), b""):
             total += len(block)
             if total > LIMIT:
                 raise ValueError("size limit exceeded")

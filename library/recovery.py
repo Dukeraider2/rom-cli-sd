@@ -26,10 +26,11 @@ def abandoned(owner):
         return False
 
 
-def inspect_jobs(db, row, folder, handle, repair):
+def inspect_jobs(db, row, folder, handle, repair, attempt=None):
     reports = []
     jobs = db.execute("""SELECT * FROM downloads WHERE platform=? AND folder=?
-                         AND (status='started' OR stage IS NOT NULL)""",(row["platform"],str(folder))).fetchall()
+                         AND (status='started' OR stage IS NOT NULL) AND (? IS NULL OR id=?)""",
+                      (row["platform"],str(folder),attempt,attempt)).fetchall()
     for job in jobs:
         if not abandoned(job["owner"]):
             continue

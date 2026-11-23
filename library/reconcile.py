@@ -8,7 +8,7 @@ import sys
 from .recovery import inspect_jobs
 
 
-def scan(db, row, system, repair=False, probe=None, force_hash=False):
+def scan(db, row, system, repair=False, probe=None, force_hash=False, checkpoint=None, limit=None):
     findings = []
     def report(status, **fields):
         findings.append({"status":status, **fields})
@@ -20,14 +20,18 @@ def scan(db, row, system, repair=False, probe=None, force_hash=False):
                             c.sha256 FROM installations i JOIN locations l ON l.id=i.location_id
                             JOIN files f ON f.id=i.file_id JOIN releases r ON r.id=f.release_id
                             JOIN games g ON g.id=r.game_id JOIN contents c ON c.id=f.content_id
-                            WHERE i.platform=? AND l.root=? AND g.system=?""",
-                         (row["platform"],str(folder.parent),system)).fetchall()
+                            WHERE i.platform=? AND l.root=? AND g.system=? LIMIT ?""",
+                         (row["platform"],str(folder.parent),system,limit+1 if limit else -1)).fetchall()
+    if limit and len(tracked)>limit:
+        raise ValueError("Console exceeds preview limit; use the library CLI")
     seen = defaultdict(list)
     missing = []
     with pinned(folder) as handle:
         findings.extend(inspect_jobs(db,row,folder,handle,repair))
         expected = set()
         for record in tracked:
+            if checkpoint:
+                checkpoint()
             path = record["path"]
             try:
                 name = checked_leaf(folder,path)
@@ -37,7 +41,7 @@ def scan(db, row, system, repair=False, probe=None, force_hash=False):
                 metadata = (handle/name).lstat()
                 cached = (sys.platform == "linux" and not force_hash and record["status"] == "installed" and stat.S_ISREG(metadata.st_mode)
                           and fingerprint(metadata) == record["fingerprint"] and metadata.st_ino != 0)
-                sha = record["sha256"] if cached else digest(handle/name)[0]
+                sha = record["sha256"] if cached else digest(handle/name,checkpoint=checkpoint)[0]
                 seen[sha].append(name)
                 if sha != record["sha256"]:
                     report("modified",path=path)
@@ -56,11 +60,15 @@ def scan(db, row, system, repair=False, probe=None, force_hash=False):
                 missing.append(record)
             except (ValueError,OSError) as exc:
                 report("invalid-or-inaccessible",path=path,reason=str(exc))
-        for item in handle.iterdir():
+        for index,item in enumerate(handle.iterdir()):
+            if checkpoint:
+                checkpoint()
+            if limit and index>=limit:
+                raise ValueError("Console exceeds preview limit; use the library CLI")
             if item.name in expected or item.suffix.lower() not in FORMATS[system]:
                 continue
             try:
-                sha, _ = digest(item)
+                sha, _ = digest(item,checkpoint=checkpoint)
                 seen[sha].append(item.name)
                 shared = db.execute("""SELECT i.platform FROM installations i JOIN locations l ON l.id=i.location_id
                                        JOIN contents c ON c.id=l.content_id WHERE l.path=? AND c.sha256=?

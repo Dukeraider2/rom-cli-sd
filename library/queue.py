@@ -12,6 +12,7 @@ from .formats import installed_formats
 from .installer import install
 from .platforms import discover, destination
 from .storage import pinned
+from .recovery import inspect_jobs
 
 ACTIVE=("queued","resolving","downloading","verifying","installing")
 RETRY=("cancelled","failed","needs_attention")
@@ -54,6 +55,8 @@ class Queue:
                   error TEXT, installation INTEGER, created INTEGER NOT NULL);
                 CREATE INDEX IF NOT EXISTS jobs_state ON jobs(state,created);
             """)
+            if "attempt" not in {r[1] for r in db.execute("PRAGMA table_info(jobs)")}:
+                db.execute("ALTER TABLE jobs ADD COLUMN attempt INTEGER")
             db.execute("""UPDATE jobs SET state='needs_attention',error='Session interrupted. Inspect destination before retry.'
                           WHERE state IN ('resolving','downloading','verifying','installing')""")
         self.wake()
@@ -84,9 +87,16 @@ class Queue:
                     identity=[str(folder),str(stamp.st_dev),str(stamp.st_ino)])
 
     def enqueue(self,token,data,platform,system,identity):
+        if self.closing:
+            raise RequestError("busy","Session is closing")
         with closing(self.db()) as db, db:
             db.execute("BEGIN IMMEDIATE")
             existing=db.execute("SELECT id FROM jobs WHERE token=?",(token,)).fetchone()
+            if existing:
+                return existing[0]
+            existing=db.execute("""SELECT id FROM jobs WHERE platform=? AND system=? AND folder=?
+                                 AND json_extract(data,'$.id')=? AND state IN (?,?,?,?,?)""",
+                                (platform,system,json.dumps(identity),data["id"],*ACTIVE)).fetchone()
             if existing:
                 return existing[0]
             self.capacity(db)
@@ -105,6 +115,8 @@ class Queue:
             raise RequestError("queue_full","Queue limit is 16 active and waiting jobs")
 
     def change(self,key,retry=False):
+        if self.closing:
+            raise RequestError("busy","Session is closing")
         with closing(self.db()) as db, db:
             db.execute("BEGIN IMMEDIATE")
             if retry:
@@ -118,6 +130,8 @@ class Queue:
                 raise RequestError("state","Action unavailable in the current job state")
         if retry:
             self.wake()
+        else:
+            self.network.abort(key)
 
     def jobs(self,key=None,page=1):
         with closing(self.db()) as db:
@@ -154,6 +168,8 @@ class Queue:
         finally:
             with self.guard:
                 self.worker=None
+                if self.closing and self.lease:
+                    self.lease.close()
             self.wake()
 
     def execute(self,db,job):
@@ -168,25 +184,44 @@ class Queue:
             nonlocal last
             now=time.monotonic()
             if now-last>=0.5 or count==total:
-                phase("downloading")
                 with db:
-                    db.execute("UPDATE jobs SET bytes=?,total=? WHERE id=?",(count,total,key))
+                    if self.closing or not db.execute("""UPDATE jobs SET bytes=?,total=?
+                            WHERE id=? AND cancel=0""",(count,total,key)).rowcount:
+                        raise InterruptedError("Transfer cancelled before publication")
                 last=now
         try:
             data=json.loads(job["data"])
             self.network.check(data["provider"],data["url"])
             row=discover(job["platform"],self.home)
             phase("downloading")
-            options=dict(opener=lambda url:self.network.open(data["provider"],url),progress=progress,
+            options=dict(opener=lambda url:self.network.open(data["provider"],url,scope=key),progress=progress,
                          expected=data["size"],checksums=data["checksums"])
             with closing(manifest.connect(self.folder/"manifest.sqlite3")) as catalog:
-                result=install(catalog,row,data["url"],job["system"],checksum=data["checksums"].get("sha256"),
-                               phase=phase,transfer_options=options,expected_folder=tuple(json.loads(job["folder"])))
+                identity=tuple(json.loads(job["folder"]))
+                checksum=data["checksums"].get("sha256")
+                if job["attempt"]:
+                    folder=destination(row,job["system"],write=True)
+                    with pinned(folder) as handle:
+                        stamp=handle.stat()
+                        if (str(folder),str(stamp.st_dev),str(stamp.st_ino))!=identity:
+                            raise ValueError("Confirmed storage changed; select the destination again")
+                        inspect_jobs(catalog,row,folder,handle,True,job["attempt"])
+                    previous=catalog.execute("""SELECT c.sha256 FROM downloads d JOIN files f ON d.file_id=f.id
+                        JOIN contents c ON c.id=f.content_id WHERE d.id=?""",(job["attempt"],)).fetchone()
+                    if previous:
+                        checksum=previous[0]
+                def remember(attempt):
+                    with db:
+                        db.execute("UPDATE jobs SET attempt=? WHERE id=?",(attempt,key))
+                result=install(catalog,row,data["url"],job["system"],checksum=checksum,
+                               phase=phase,transfer_options=options,expected_folder=identity,
+                               on_attempt=remember,require_known_existing=True)
             with db:
                 db.execute("UPDATE jobs SET state='completed',installation=? WHERE id=?",(result["id"],key))
         except Exception as exc:
             state="failed"
-            if isinstance(exc,InterruptedError):
+            cancelled=db.execute("SELECT cancel FROM jobs WHERE id=?",(key,)).fetchone()[0]
+            if self.closing or cancelled or isinstance(exc,InterruptedError):
                 state="needs_attention" if self.closing else "cancelled"
             elif isinstance(exc,(FileExistsError,PermissionError,FileNotFoundError,ValueError,OSError)):
                 state="needs_attention"
@@ -197,8 +232,9 @@ class Queue:
         with self.guard:
             self.closing=True
             worker=self.worker
+        self.network.stop()
         if worker:
-            worker.join()
-        if self.lease:
+            worker.join(timeout=4)
+        if self.lease and (not worker or not worker.is_alive()):
             self.lease.close()
 
