@@ -1,0 +1,942 @@
+{
+  "schema": 1,
+  "kind": "log_derived_real_synthetic_results",
+  "notice": "Compact transcript/summary extract from CI logs. Full per-run metrics and fixture manifest are in the GitHub Actions artifact.",
+  "run_url": "https://github.com/Dukeraider2/rom-cli-sd/actions/runs/45285611032",
+  "run_id": 45285611032,
+  "source_commit": "7a079674cf34682385cde7f0a14d4424acc8bf63",
+  "engine": {
+    "repository": "ggml-org/whisper.cpp",
+    "revision": "96ec4d9823e9d0211944172da35f9f29134af990",
+    "binary_sha256": "f8bb2ccd644bd37cb19a4809bf5e4f035ebe65cbdbb1ec92cad209446057554f"
+  },
+  "models": {
+    "tiny.en": {
+      "sha1": "c78c86eb1a8faa21b369bcd33207cc90d64ae9df",
+      "sha256": "921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f"
+    },
+    "base.en": {
+      "sha1": "137c40403d78fd54d454da0f9bd998f78703390c",
+      "sha256": "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002"
+    }
+  },
+  "host": {
+    "os": "Ubuntu 24.04 CI, Linux 7.0.0-1017-azure x86_64",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "allocated_logical_cpus": 4,
+    "python": "3.12.3",
+    "espeak": "1.48.15",
+    "ffmpeg": "6.1.1-3ubuntu5"
+  },
+  "protocol": {
+    "language": "en",
+    "backend": "CPU only",
+    "threads": 4,
+    "model_lifecycle": "fresh process per clip",
+    "repeats": 2,
+    "clips": 16,
+    "synthetic_title_clips": 14,
+    "non_speech_clips": 2,
+    "model_runs": 32,
+    "all_runs": 64,
+    "timeout_seconds": 60,
+    "engine_settings": [
+      "-l",
+      "en",
+      "-t",
+      "4",
+      "-ng",
+      "-nf",
+      "-sns",
+      "-tp",
+      "0",
+      "-tpi",
+      "0",
+      "-bs",
+      "5",
+      "-bo",
+      "5",
+      "-otxt"
+    ],
+    "normalization": "NFKC + casefold + & to and + number words 0..10 to digits + punctuation removal + whitespace collapse",
+    "retrieval": "normalized exact, else SequenceMatcher >=0.82 with >=0.08 margin"
+  },
+  "summary": {
+    "base.en": {
+      "cpu_seconds_total": 157.79826,
+      "errors": [],
+      "fresh_process_first_run_ms": {
+        "p50": 1258.152,
+        "p95": 1772.381,
+        "samples": 16
+      },
+      "fresh_process_subsequent_run_ms": {
+        "p50": 1254.05,
+        "p95": 1779.598,
+        "samples": 16
+      },
+      "groups": {
+        "human": {
+          "catalog_retrieval": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "false_nonempty": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "latency_ms": {
+            "p50": null,
+            "p95": null
+          },
+          "normalized_exact": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "raw_exact": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "samples": 0,
+          "successful_runs": 0
+        },
+        "noise": {
+          "catalog_retrieval": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "false_nonempty": {
+            "denominator": 2,
+            "numerator": 0
+          },
+          "latency_ms": {
+            "p50": 1220.68,
+            "p95": 1228.098
+          },
+          "normalized_exact": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "raw_exact": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "samples": 2,
+          "successful_runs": 2
+        },
+        "silence": {
+          "catalog_retrieval": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "false_nonempty": {
+            "denominator": 2,
+            "numerator": 2
+          },
+          "latency_ms": {
+            "p50": 3009.57,
+            "p95": 3022.534
+          },
+          "normalized_exact": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "raw_exact": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "samples": 2,
+          "successful_runs": 2
+        },
+        "synthetic": {
+          "catalog_retrieval": {
+            "denominator": 28,
+            "numerator": 20
+          },
+          "false_nonempty": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "latency_ms": {
+            "p50": 1258.152,
+            "p95": 1347.297
+          },
+          "normalized_exact": {
+            "denominator": 28,
+            "numerator": 20
+          },
+          "raw_exact": {
+            "denominator": 28,
+            "numerator": 12
+          },
+          "samples": 28,
+          "successful_runs": 28
+        }
+      },
+      "model": "base.en",
+      "model_size_bytes": 147964211,
+      "peak_rss_bytes_sampled": 295821312,
+      "temporary_disk_bytes_peak": 41
+    },
+    "tiny.en": {
+      "cpu_seconds_total": 65.68169,
+      "errors": [],
+      "fresh_process_first_run_ms": {
+        "p50": 589.308,
+        "p95": 657.249,
+        "samples": 16
+      },
+      "fresh_process_subsequent_run_ms": {
+        "p50": 583.514,
+        "p95": 647.063,
+        "samples": 16
+      },
+      "groups": {
+        "human": {
+          "catalog_retrieval": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "false_nonempty": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "latency_ms": {
+            "p50": null,
+            "p95": null
+          },
+          "normalized_exact": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "raw_exact": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "samples": 0,
+          "successful_runs": 0
+        },
+        "noise": {
+          "catalog_retrieval": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "false_nonempty": {
+            "denominator": 2,
+            "numerator": 0
+          },
+          "latency_ms": {
+            "p50": 591.061,
+            "p95": 597.964
+          },
+          "normalized_exact": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "raw_exact": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "samples": 2,
+          "successful_runs": 2
+        },
+        "silence": {
+          "catalog_retrieval": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "false_nonempty": {
+            "denominator": 2,
+            "numerator": 0
+          },
+          "latency_ms": {
+            "p50": 542.31,
+            "p95": 544.762
+          },
+          "normalized_exact": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "raw_exact": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "samples": 2,
+          "successful_runs": 2
+        },
+        "synthetic": {
+          "catalog_retrieval": {
+            "denominator": 28,
+            "numerator": 18
+          },
+          "false_nonempty": {
+            "denominator": 0,
+            "numerator": 0
+          },
+          "latency_ms": {
+            "p50": 589.668,
+            "p95": 665.026
+          },
+          "normalized_exact": {
+            "denominator": 28,
+            "numerator": 16
+          },
+          "raw_exact": {
+            "denominator": 28,
+            "numerator": 4
+          },
+          "samples": 28,
+          "successful_runs": 28
+        }
+      },
+      "model": "tiny.en",
+      "model_size_bytes": 77704715,
+      "peak_rss_bytes_sampled": 182513664,
+      "temporary_disk_bytes_peak": 41
+    }
+  },
+  "transcripts": [
+    {
+      "model": "tiny.en",
+      "fixture": "mario-2",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Super Mario Bros. 2",
+      "transcript": "Super Mario Bros. 2",
+      "retrieved": "Super Mario Bros. 2",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "mario-2",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Super Mario Bros. 2",
+      "transcript": "Super Mario Bros. 2",
+      "retrieved": "Super Mario Bros. 2",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "mario-2",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Super Mario Bros. 2",
+      "transcript": "Super Mario Bros. 2.",
+      "retrieved": "Super Mario Bros. 2",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "mario-2",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Super Mario Bros. 2",
+      "transcript": "Super Mario Bros. 2.",
+      "retrieved": "Super Mario Bros. 2",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "mario-3",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Super Mario Bros. 3",
+      "transcript": "Super Mario Bros. Free.",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "mario-3",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Super Mario Bros. 3",
+      "transcript": "Super Mario Bros. Free.",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "mario-3",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Super Mario Bros. 3",
+      "transcript": "Super Mario Bros. 3",
+      "retrieved": "Super Mario Bros. 3",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "mario-3",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Super Mario Bros. 3",
+      "transcript": "Super Mario Bros. 3",
+      "retrieved": "Super Mario Bros. 3",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "metroid-prime",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Metroid Prime",
+      "transcript": "Metroid Prime.",
+      "retrieved": "Metroid Prime",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "metroid-prime",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Metroid Prime",
+      "transcript": "Metroid Prime.",
+      "retrieved": "Metroid Prime",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "metroid-prime",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Metroid Prime",
+      "transcript": "Metroid Prime.",
+      "retrieved": "Metroid Prime",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "metroid-prime",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Metroid Prime",
+      "transcript": "Metroid Prime.",
+      "retrieved": "Metroid Prime",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "metroid-prime-2",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Metroid Prime 2: Echoes",
+      "transcript": "Metroid Prime 2 Air Ghost",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "metroid-prime-2",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Metroid Prime 2: Echoes",
+      "transcript": "Metroid Prime 2 Air Ghost",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "metroid-prime-2",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Metroid Prime 2: Echoes",
+      "transcript": "Metroid Prime 2 and it goes",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "metroid-prime-2",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Metroid Prime 2: Echoes",
+      "transcript": "Metroid Prime 2 and it goes",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "mega-man-2",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Mega Man 2",
+      "transcript": "I'm Mega Man 2.",
+      "retrieved": "Mega Man 2",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "mega-man-2",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Mega Man 2",
+      "transcript": "I'm Mega Man 2.",
+      "retrieved": "Mega Man 2",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "mega-man-2",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Mega Man 2",
+      "transcript": "Mega Man 2",
+      "retrieved": "Mega Man 2",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "mega-man-2",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Mega Man 2",
+      "transcript": "Mega Man 2",
+      "retrieved": "Mega Man 2",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "mega-man-3",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Mega Man 3",
+      "transcript": "Mega Man 3.",
+      "retrieved": "Mega Man 3",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "mega-man-3",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Mega Man 3",
+      "transcript": "Mega Man 3.",
+      "retrieved": "Mega Man 3",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "mega-man-3",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Mega Man 3",
+      "transcript": "Mega Man free.",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "mega-man-3",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Mega Man 3",
+      "transcript": "Mega Man free.",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "zelda",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "The Legend of Zelda",
+      "transcript": "The legend of Zelda.",
+      "retrieved": "The Legend of Zelda",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "zelda",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "The Legend of Zelda",
+      "transcript": "The legend of Zelda.",
+      "retrieved": "The Legend of Zelda",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "zelda",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "The Legend of Zelda",
+      "transcript": "I'll see you in the next one!",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "zelda",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "The Legend of Zelda",
+      "transcript": "I'll see you in the next one!",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "zelda-past",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "The Legend of Zelda: A Link to the Past",
+      "transcript": "The legend of Zelda, a link to the past.",
+      "retrieved": "The Legend of Zelda: A Link to the Past",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "zelda-past",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "The Legend of Zelda: A Link to the Past",
+      "transcript": "The legend of Zelda, a link to the past.",
+      "retrieved": "The Legend of Zelda: A Link to the Past",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "zelda-past",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "The Legend of Zelda: A Link to the Past",
+      "transcript": "The legend of Zelda, a link to the past.",
+      "retrieved": "The Legend of Zelda: A Link to the Past",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "zelda-past",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "The Legend of Zelda: A Link to the Past",
+      "transcript": "The legend of Zelda, a link to the past.",
+      "retrieved": "The Legend of Zelda: A Link to the Past",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "sonic",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Sonic the Hedgehog",
+      "transcript": "Sonic Maghaj.",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "sonic",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Sonic the Hedgehog",
+      "transcript": "Sonic Maghaj.",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "sonic",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Sonic the Hedgehog",
+      "transcript": "Sonic the Hedgehog",
+      "retrieved": "Sonic the Hedgehog",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "sonic",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Sonic the Hedgehog",
+      "transcript": "Sonic the Hedgehog",
+      "retrieved": "Sonic the Hedgehog",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "sonic-2",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Sonic the Hedgehog 2",
+      "transcript": "Salyak Mepanjhak II.",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "sonic-2",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Sonic the Hedgehog 2",
+      "transcript": "Salyak Mepanjhak II.",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "sonic-2",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Sonic the Hedgehog 2",
+      "transcript": "Sonic the Hedgehog 2",
+      "retrieved": "Sonic the Hedgehog 2",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "sonic-2",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Sonic the Hedgehog 2",
+      "transcript": "Sonic the Hedgehog 2",
+      "retrieved": "Sonic the Hedgehog 2",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "chrono",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Chrono Trigger",
+      "transcript": "Chrono Trigger",
+      "retrieved": "Chrono Trigger",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "chrono",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Chrono Trigger",
+      "transcript": "Chrono Trigger",
+      "retrieved": "Chrono Trigger",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "chrono",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Chrono Trigger",
+      "transcript": "Chrono Trigger",
+      "retrieved": "Chrono Trigger",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "chrono",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Chrono Trigger",
+      "transcript": "Chrono Trigger",
+      "retrieved": "Chrono Trigger",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "street-fighter-2",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Street Fighter II",
+      "transcript": "Street Fighter Woman 2",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "street-fighter-2",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Street Fighter II",
+      "transcript": "Street Fighter Woman 2",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "street-fighter-2",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Street Fighter II",
+      "transcript": "Street Fighter Roman II",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "street-fighter-2",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Street Fighter II",
+      "transcript": "Street Fighter Roman II",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "mario-2-noisy",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Super Mario Bros. 2",
+      "transcript": "Super Mario Bros. 2.",
+      "retrieved": "Super Mario Bros. 2",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "mario-2-noisy",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Super Mario Bros. 2",
+      "transcript": "Super Mario Bros. 2.",
+      "retrieved": "Super Mario Bros. 2",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "mario-2-noisy",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Super Mario Bros. 2",
+      "transcript": "Super Mario Bros. 2.",
+      "retrieved": "Super Mario Bros. 2",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "mario-2-noisy",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Super Mario Bros. 2",
+      "transcript": "Super Mario Bros. 2.",
+      "retrieved": "Super Mario Bros. 2",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "metroid-prime-noisy",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Metroid Prime",
+      "transcript": "Metroid Prime.",
+      "retrieved": "Metroid Prime",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "metroid-prime-noisy",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Metroid Prime",
+      "transcript": "Metroid Prime.",
+      "retrieved": "Metroid Prime",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "metroid-prime-noisy",
+      "kind": "synthetic",
+      "repeat": 1,
+      "expected": "Metroid Prime",
+      "transcript": "Metroid Prime",
+      "retrieved": "Metroid Prime",
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "metroid-prime-noisy",
+      "kind": "synthetic",
+      "repeat": 2,
+      "expected": "Metroid Prime",
+      "transcript": "Metroid Prime",
+      "retrieved": "Metroid Prime",
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "silence",
+      "kind": "silence",
+      "repeat": 1,
+      "expected": null,
+      "transcript": "",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "silence",
+      "kind": "silence",
+      "repeat": 2,
+      "expected": null,
+      "transcript": "",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "silence",
+      "kind": "silence",
+      "repeat": 1,
+      "expected": null,
+      "transcript": "You",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "silence",
+      "kind": "silence",
+      "repeat": 2,
+      "expected": null,
+      "transcript": "You",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "noise-only",
+      "kind": "noise",
+      "repeat": 1,
+      "expected": null,
+      "transcript": "",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "tiny.en",
+      "fixture": "noise-only",
+      "kind": "noise",
+      "repeat": 2,
+      "expected": null,
+      "transcript": "",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "noise-only",
+      "kind": "noise",
+      "repeat": 1,
+      "expected": null,
+      "transcript": "",
+      "retrieved": null,
+      "ok": true
+    },
+    {
+      "model": "base.en",
+      "fixture": "noise-only",
+      "kind": "noise",
+      "repeat": 2,
+      "expected": null,
+      "transcript": "",
+      "retrieved": null,
+      "ok": true
+    }
+  ],
+  "decision": "collect_more_evidence",
+  "decision_reason": "No human clips or physical Deck results; base.en hallucinated on silence and neither model reached reliable synthetic title retrieval."
+}

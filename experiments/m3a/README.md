@@ -1,6 +1,6 @@
 # M3A — Offline game-title transcription experiment
 
-**Status: benchmark harness implemented; real model comparison NOT RUN. Decision: COLLECT MORE EVIDENCE.** M2 Steam Deck physical acceptance remains the release priority. This optional development-only directory is not imported by the CLI, Decky backend or frontend, and is not packaged in the plugin ZIP.
+**Status: real synthetic-speech comparison completed in CI; human and Steam Deck measurements outstanding. Decision: COLLECT MORE EVIDENCE.** M2 Steam Deck physical acceptance remains the release priority. This optional development-only directory is not imported by the CLI, Decky backend or frontend, and is not packaged in the plugin ZIP.
 
 ## Verified upstream baseline (2026-11-23)
 
@@ -55,7 +55,7 @@ The runner rejects missing or mismatched model SHA-1, mismatched fixture SHA-256
 
 Normalization is defined before scoring: Unicode NFKC, casefold, & to "and", number words zero through ten to digits, punctuation/underscore removal, and whitespace collapse. Roman numerals remain literal. Search usefulness is a **fixed local catalog simulation**, not a claim about Internet Archive provider ranking: exact normalized match wins, otherwise Python SequenceMatcher ratio >=0.82 and a >=0.08 margin over runner-up; ambiguity means no match.
 
-Every clip uses a **fresh CLI process**. First and later process timings may differ due to filesystem cache; neither is a genuinely resident model. Time includes CLI startup, model loading, inference, and transcript publication, but not one-time model integrity hashing or fixture generation. CPU time is a process-child rusage delta; peak RSS is sampled from Linux /proc VmHWM and may underestimate very short peaks. Temporary disk measures output/log files before cleanup. All models use CPU-only, four threads, English, no fallback, suppressed non-speech tokens, zero temperature and fixed beam/best-of settings. The runner does not claim Steam Deck power or in-game performance.
+Every clip uses a **fresh CLI process**. First and later process timings may differ due to filesystem cache; neither is a genuinely resident model. Time includes CLI startup, model loading, inference, and transcript publication, but not one-time model integrity hashing or fixture generation. CPU time is a process-child rusage delta; peak RSS is sampled from Linux /proc VmHWM and may underestimate very short peaks. Temporary disk measures bounded transcript output before cleanup; engine stdout/stderr are discarded. All models use CPU-only, four threads, English, no fallback, suppressed non-speech tokens, zero temperature and fixed beam/best-of settings. The runner does not claim Steam Deck power or in-game performance.
 
 ## CI-only pipeline smoke
 
@@ -79,4 +79,4 @@ The fake engine validates subprocess lifecycle, result serialization and scoring
 
 The current Decky search field in decky/src/index.tsx is editable state query; Search is a separate button calling the validated search RPC. A future M3B transcript can setQuery(text) without invoking search. File selection, suite choice and confirmation/enqueue remain separate M2 actions. M3A does **not** modify this UI, the RPC allowlist, the SQLite schema, the package builder, or downloader behavior. M2 device testing and ordinary typed search remain independent.
 
-**Decision: COLLECT MORE EVIDENCE.** The model weights and whisper-cli executable are not available in this development environment, so there are no real ASR accuracy or resource measurements. Required next evidence: real tiny.en/base.en runs on the same human and synthetic clips, review of raw transcripts and false inputs, then Steam Deck controller/microphone/power measurements during M3B. Do not mark M3A complete until another developer reproduces the real comparison.
+**Decision: COLLECT MORE EVIDENCE.** The [real CPU-only synthetic comparison](../../docs/m3a-results.md) completed on Linux CI, with verified model hashes and raw transcripts. base.en retrieved 20/28 synthetic titles but hallucinated on both silence trials; tiny.en retrieved 18/28 with no silence false inputs. Neither model is approved for M3B from synthetic-only host evidence. Required next evidence: consented human clips, review of failure cases, and Steam Deck controller/microphone/power measurements. M2 physical validation remains the release priority.
