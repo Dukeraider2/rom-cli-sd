@@ -74,8 +74,6 @@ def _rss_bytes(pid: int) -> int | None:
 
 
 def _terminate(process: subprocess.Popen) -> None:
-    if process.poll() is not None:
-        return
     try:
         if os.name == "posix":
             os.killpg(process.pid, signal.SIGTERM)
@@ -94,6 +92,12 @@ def _terminate(process: subprocess.Popen) -> None:
         except ProcessLookupError:
             pass
         process.wait(timeout=2)
+    # A leader can exit on TERM while another member still holds the session.
+    if os.name == "posix":
+        try:
+            os.killpg(process.pid,signal.SIGKILL)
+        except ProcessLookupError:
+            pass
 
 
 class WhisperAdapter:
@@ -173,6 +177,9 @@ class WhisperAdapter:
             reason = None
             try:
                 while True:
+                    if output.is_symlink() or (output.exists() and output.stat().st_size>MAX_OUTPUT_BYTES):
+                        reason = "invalid_output"
+                        break
                     peak_now = _rss_bytes(process.pid)
                     if peak_now is not None:
                         peak = max(peak or 0, peak_now)
@@ -188,7 +195,7 @@ class WhisperAdapter:
                     except subprocess.TimeoutExpired:
                         pass
             finally:
-                if reason or process.poll() is None:
+                if os.name == "posix" or reason or process.poll() is None:
                     _terminate(process)
             elapsed = time.monotonic() - start
             after = resource.getrusage(resource.RUSAGE_CHILDREN)
@@ -206,7 +213,13 @@ class WhisperAdapter:
             if output.stat().st_size > MAX_OUTPUT_BYTES:
                 return {"ok": False, "error": {"code": "invalid_output", "message": "Transcript exceeds output limit"}, "metrics": metrics}
             try:
-                text = output.read_text(encoding="utf-8").strip()
+                with output.open("rb") as stream:
+                    raw=stream.read(MAX_OUTPUT_BYTES+1)
+                if len(raw)>MAX_OUTPUT_BYTES:
+                    raise TranscriptionError("invalid_output","Transcript exceeds output limit")
+                text = raw.decode("utf-8").strip()
+                if any(ord(char)<32 and char not in "\t\n\r" for char in text):
+                    raise TranscriptionError("invalid_output","Unexpected control character")
             except UnicodeError:
                 return {"ok": False, "error": {"code": "invalid_output", "message": "Transcript is not UTF-8"}, "metrics": metrics}
             return {"ok": True, "text": text, "model": model_id, "metrics": metrics}

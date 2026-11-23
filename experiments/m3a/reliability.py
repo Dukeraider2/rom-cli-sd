@@ -2,7 +2,7 @@
 import argparse
 import difflib
 import json
-import math
+import re
 import os
 import platform
 import random
@@ -42,9 +42,11 @@ def energy(path,cancel=None,deadline=None):
 
 def calibrate(fixtures,folder):
     dev=[(energy(folder/(f["id"]+".wav")),bool(f["expected_title"])) for f in fixtures if f["split"]=="dev"]
+    if not dev or not any(s for _,s in dev) or all(s for _,s in dev):
+        raise ValueError("Gate calibration needs speech and non-speech development samples")
     scores=[]
     for threshold in (1,4,12,24,48,96,192):
-        scores.append(dict(threshold=threshold,reject_speech=sum(v<t and s for v,s in dev for t in [threshold]),
+        scores.append(dict(threshold=threshold,reject_speech=sum(v<threshold and s for v,s in dev),
                            accept_noise=sum(v>=threshold and not s for v,s in dev)))
     best=min(scores,key=lambda s:(s["reject_speech"],s["accept_noise"],s["threshold"]))
     return best["threshold"],scores
@@ -69,15 +71,22 @@ def ranked(text,catalog):
 def compare(args):
     manifest=json.loads((args.fixtures/"manifest.json").read_text())
     clips=manifest["clips"]
+    ids=[f["id"] for f in clips]
+    if len(ids)!=len(set(ids)) or any(not re.fullmatch(r"[a-z0-9][a-z0-9_-]{0,63}",key) for key in ids):
+        raise ValueError("Duplicate or invalid fixture ID")
+    dev_hashes={f["sha256"] for f in clips if f["split"]=="dev"}
+    if any(f["sha256"] in dev_hashes for f in clips if f["split"]=="test"):
+        raise ValueError("Development and held-out files overlap")
     if manifest["fixture_mode"]!="synthetic_speech" or any(f["kind"] not in ("synthetic","silence","noise") for f in clips):
         raise ValueError("Expected generated synthetic Phase 2 fixtures")
     for f in clips:
         path=args.fixtures/(f["id"]+".wav")
+        validate_audio(path)
         if path.resolve().parent!=args.fixtures.resolve() or path.is_symlink() or digest(path)!=f["sha256"]:
             raise ValueError("Invalid fixture path or digest")
     original=json.loads((Path(__file__).parent/"catalog.json").read_text())
     small=list(dict.fromkeys(original+[f["expected_title"] for f in clips if f["expected_title"]]))
-    catalogs={"small":small,"large":small+DISTRACTORS}
+    catalogs={"control":original,"small":small,"large":small+DISTRACTORS}
     threshold,training=calibrate(clips,args.fixtures)
     tracemalloc.start()
     for f in clips:
@@ -103,23 +112,31 @@ def compare(args):
                 start=time.perf_counter()
                 gate_ms=gate_cpu=0.
                 score=None
+                gate_error=None
                 if gated:
                     cpu=time.process_time()
-                    score=energy(path,deadline=time.monotonic()+1)
+                    try:
+                        score=energy(path,deadline=time.monotonic()+1)
+                    except TranscriptionError as exc:
+                        gate_error={"code":exc.code,"message":str(exc)}
                     gate_cpu=time.process_time()-cpu
                     gate_ms=(time.perf_counter()-start)*1000
-                rejected=gated and score<threshold
-                if rejected:
+                rejected=score is not None and score<threshold
+                if gate_error:
+                    result={"ok":False,"error":gate_error,"metrics":{}}
+                elif rejected:
                     result={"ok":True,"text":"","metrics":{}}
                 else:
                     ordinal+=1
                     result=adapter.transcribe(path,model)
                 elapsed=(time.perf_counter()-start)*1000
                 text=result.get("text","")
-                row=dict(fixture=key,split=fixture["split"],expected=fixture["expected_title"],model=model,
+                expected=fixture["expected_title"]
+                row=dict(fixture=key,split=fixture["split"],expected=expected,model=model,
+                         expected_normalized=normalize(expected) if expected is not None else None,
                          config=config,decoder=decoder,threads=threads,repeat=rep,ok=result["ok"],error=result.get("error"),
                          transcript=text,normalized=normalize(text),title_normalized=title_key(text),
-                         fresh_process=ordinal if not rejected else None,metrics=result.get("metrics",{}),
+                         fresh_process=ordinal if not rejected and not gate_error else None,metrics=result.get("metrics",{}),
                          elapsed_ms=elapsed,gate_score=score,gate_rejected=rejected,gate_ms=gate_ms,gate_cpu_s=gate_cpu,
                          retrieval={k:{"original":catalog_match(text,c),"title_aware":ranked(text,c)} for k,c in catalogs.items()})
                 report["rows"].append(row)

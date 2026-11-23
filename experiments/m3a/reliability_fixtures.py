@@ -66,19 +66,24 @@ def build(folder):
         for kind in ("silence","room","game","clicks"):
             rng=random.Random(seed)
             values=[]
-            for i in range(SAMPLE_RATE*2):
+            duration=1.5 if split=="dev" else 2.25
+            for i in range(int(SAMPLE_RATE*duration)):
                 t=i/SAMPLE_RATE
                 if kind=="room":
                     x=9*math.sin(2*math.pi*60*t)+rng.uniform(-3,3)
                 elif kind=="game":
-                    x=500*math.sin(2*math.pi*(220+55*(int(t*4)%3))*t)
+                    notes=(220,275,330) if split=="dev" else (294,392,330,262)
+                    x=500*math.sin(2*math.pi*notes[int(t*4)%len(notes)]*t)
                 elif kind=="clicks":
                     x=1200 if i%(607+seed)==0 else 0
                 else:
                     x=0
                 values.append(round(x))
             record(split+"-"+kind,None,split,"silence" if kind=="silence" else "noise",
-                   dict(generator=kind,seed=seed),values)
+                   dict(generator=kind,seed=seed,duration=duration),values)
+    dev={c["sha256"] for c in clips if c["split"]=="dev"}
+    if any(c["sha256"] in dev for c in clips if c["split"]=="test"):
+        raise ValueError("Development and held-out files overlap")
     manifest["versions"]={k:subprocess.check_output([k,flag],text=True).splitlines()[0]
                           for k,flag in (("espeak","--version"),("ffmpeg","-version"))}
     (folder/"manifest.json").write_text(json.dumps(manifest,indent=2)+"\n")
