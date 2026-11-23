@@ -74,7 +74,11 @@ def summarize(rows: list[dict], model: str) -> dict:
             "latency_ms": {"p50": percentile(times, 0.5), "p95": percentile(times, 0.95)},
         }
     successful = [r for r in selected if r["ok"]]
+    first = [r["metrics"]["elapsed_ms"] for r in successful if r["repeat"] == 1]
+    subsequent = [r["metrics"]["elapsed_ms"] for r in successful if r["repeat"] > 1]
     return {"model": model, "groups": groups,
+            "fresh_process_first_run_ms": {"samples": len(first), "p50": percentile(first, 0.5), "p95": percentile(first, 0.95)},
+            "fresh_process_subsequent_run_ms": {"samples": len(subsequent), "p50": percentile(subsequent, 0.5), "p95": percentile(subsequent, 0.95)},
             "peak_rss_bytes_sampled": max((r["metrics"]["peak_rss_bytes_sampled"] or 0 for r in successful), default=None),
             "cpu_seconds_total": round(sum(r["metrics"]["cpu_seconds"] for r in successful), 5),
             "temporary_disk_bytes_peak": max((r["metrics"]["temporary_disk_bytes"] for r in successful), default=None),
@@ -138,8 +142,13 @@ def run(args) -> dict:
         "decision": "collect_more_evidence",
         "decision_reason": ("Mock output does not measure speech recognition" if args.mock
                             else "Host measurements require review and physical Steam Deck M3B validation"),
-        "engine": {"revision": args.engine_revision, "binary_sha256": digest(engine_path),
-                   "path": str(engine_path)},
+        "engine": {"revision_declared": "fake_engine" if args.mock else args.engine_revision,
+                   "revision_verification": "declared by operator; compare git checkout separately",
+                   "binary_sha256": digest(engine_path), "path": str(engine_path)},
+        "command_template": [str(engine_path), "-m", "<verified-model-path>", "-f", "<verified-fixture-wav>",
+                             "-l", "en", "-t", str(args.threads), "-ng", "-nf", "-sns",
+                             "-tp", "0", "-tpi", "0", "-bs", "5", "-bo", "5",
+                             "-otxt", "-of", "<private-temporary-output-stem>"],
         "environment": {"platform": platform.platform(), "machine": platform.machine(),
                         "python": sys.version.split()[0], "cpu_count": os.cpu_count(),
                         "threads": args.threads, "timeout_seconds": args.timeout,
@@ -156,6 +165,7 @@ def run(args) -> dict:
                              "threshold":MATCH_THRESHOLD,"runner_up_margin":MARGIN,"ambiguous":"no match"},
         "catalog_sha256": digest(Path(args.catalog)),
         "fixture_manifest_sha256": digest(fixture_dir / "manifest.json"),
+        "fixture_provenance": {f["id"]: f.get("provenance") for f in manifest["clips"]},
         "models": {m: adapter._model(m)[1] for m in MODELS},
         "rows": rows, "summary": {m: summarize(rows, m) for m in MODELS},
     }
