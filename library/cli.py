@@ -9,7 +9,9 @@ from pathlib import Path
 from . import manifest
 from .installer import install
 from .platforms import discover, destination, FORMATS, PLATFORMS
-from .reconcile import scan
+from .reconcile import scan, scan_root
+from .storage import pinned
+from .formats import installed_formats
 
 LIST = """SELECT i.id, g.id AS game_id,g.display_title,g.system,r.region,r.revision,f.disc,i.platform,
           l.path,i.status AS recorded_status,i.verified_at FROM installations i
@@ -26,13 +28,13 @@ def parser():
         if name in ("install","verify","scan","reconcile","consoles"):
             command.add_argument("--platform",choices=PLATFORMS,required=True)
         if name in ("install","verify","scan","reconcile"):
-            command.add_argument("--system",choices=FORMATS,required=name!="install")
+            command.add_argument("--system",choices=FORMATS)
             command.add_argument("--root",type=Path,help="require this configured ROM root")
         if name=="inspect":
             command.add_argument("game_id",type=int)
         if name=="install":
             command.add_argument("source",help="authorized local file or direct HTTP(S) URL")
-            for field in ("title","region","revision","sha256"):
+            for field in ("title","region","revision","language","edition","sha256"):
                 command.add_argument("--"+field)
             command.add_argument("--disc",type=int,default=0)
         if name=="reconcile":
@@ -55,6 +57,8 @@ def run(args):
             for system,formats in FORMATS.items():
                 try:
                     path = destination(row,system)
+                    with pinned(path) as handle:
+                        formats = installed_formats(handle,system)
                     results.append(dict(system=system,path=str(path),formats=formats,writable=os.access(path,os.W_OK)))
                 except (ValueError,OSError) as exc:
                     results.append(dict(system=system,error=str(exc)))
@@ -65,9 +69,10 @@ def run(args):
             return {"version":manifest.VERSION,"path":str(manifest.default_path())}
         if op=="install":
             return install(db,row,args.source,args.system,args.title,args.region or "",args.revision or "",
-                           args.disc,args.sha256)
+                           args.disc,args.sha256,language=args.language or "",edition=args.edition or "")
         if op in ("verify","scan","reconcile"):
-            records = scan(db,row,args.system,getattr(args,"confirm_pending",False),force_hash=op=="verify")
+            options = dict(repair=getattr(args,"confirm_pending",False),force_hash=op=="verify")
+            records = scan(db,row,args.system,**options) if args.system else scan_root(db,row,**options)
             if op=="scan":
                 return [r for r in records if r["status"]!="verified"]
             return records

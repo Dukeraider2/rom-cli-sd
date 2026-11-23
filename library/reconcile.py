@@ -63,14 +63,32 @@ def scan(db, row, system, repair=False, probe=None, force_hash=False):
                 shared = db.execute("""SELECT i.platform FROM installations i JOIN locations l ON l.id=i.location_id
                                        JOIN contents c ON c.id=l.content_id WHERE l.path=? AND c.sha256=?
                                        AND i.platform<>?""",(str(folder/item.name),sha,row["platform"])).fetchone()
-                report("shared" if shared else "untracked",path=str(folder/item.name))
+                report("shared" if shared else "untracked",path=str(folder/item.name),sha256=sha)
             except (OSError,ValueError) as exc:
                 report("inaccessible",path=str(folder/item.name),reason=str(exc))
         for record in missing:
             candidates = seen.get(record["sha256"],[])
-            report("moved-or-renamed" if candidates else "missing",path=record["path"],candidates=candidates)
+            report("moved-or-renamed" if candidates else "missing",path=record["path"],candidates=candidates,
+                   sha256=record["sha256"])
         for sha,names in seen.items():
             if len(names)>1:
                 report("duplicate",sha256=sha,files=names)
     return findings
+
+
+def scan_root(db, row, *, repair=False, force_hash=False):
+    if row["status"] != "ready":
+        return [{"status":"unavailable","reason":row["status"],"root":row["root"]}]
+    results = []
+    candidates = defaultdict(list)
+    for system in FORMATS:
+        for item in scan(db,row,system,repair,force_hash=force_hash):
+            item["system"] = system
+            results.append(item)
+            if item["status"] in ("untracked","shared"):
+                candidates[item["sha256"]].append(item["path"])
+    for item in results:
+        if item["status"] == "missing" and item["sha256"] in candidates:
+            item.update(status="moved-or-renamed",candidates=candidates[item["sha256"]])
+    return results
 

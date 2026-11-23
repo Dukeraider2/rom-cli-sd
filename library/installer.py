@@ -8,7 +8,7 @@ from .naming import identify, names
 from .platforms import destination
 from .storage import checked_leaf, digest, pinned
 from .transfer import transfer
-from .formats import validate
+from .formats import installed_formats, validate
 from .storage import regular
 
 
@@ -24,12 +24,12 @@ def entity(db, table, keys, extra=None):
 
 
 def reserve(db, platform, folder, filename, original, info, content, checksum, job, received):
-    display, normalized, system, region, revision, disc = info
+    display, normalized, system, region, revision, disc, language, edition = info
     sha, size = content
     cid = entity(db, "contents", dict(sha256=sha), dict(size=size))
     game = entity(db, "games", dict(system=system, normalized_title=normalized),
                   dict(display_title=display, metadata_source="user" if display != Path(original).stem else "filename"))
-    release = entity(db, "releases", dict(game_id=game, region=region, revision=revision, language="", edition=""))
+    release = entity(db, "releases", dict(game_id=game, region=region, revision=revision, language=language, edition=edition))
     fid = entity(db, "files", dict(release_id=release, content_id=cid, original_filename=original, disc=disc),
                  dict(normalized_filename=filename, format=Path(filename).suffix.lower(),
                       role="disc" if disc else "image", source_checksum=checksum,
@@ -46,7 +46,7 @@ def reserve(db, platform, folder, filename, original, info, content, checksum, j
 
 
 def install(db, row, source, system=None, title=None, region="", revision="", disc=0, checksum=None,
-            probe=None):
+            probe=None, language="", edition=""):
     remote = "://" in source
     original = unquote(urlsplit(source).path.rsplit("/",1)[-1]) if remote else Path(source).name
     system = identify(original, system)
@@ -65,9 +65,11 @@ def install(db, row, source, system=None, title=None, region="", revision="", di
         job = db.execute("""INSERT INTO downloads(source,item,status,folder,platform,owner)
                             VALUES(?,?,'started',?,?,?)""",
                          ("http" if remote else "local",item,str(folder),row["platform"],process_owner())).lastrowid
-    info = display, normalized, system, region, revision, disc
+    info = display, normalized, system, region, revision, disc, language, edition
     try:
         with pinned(folder) as handle:
+            if Path(filename).suffix.lower() not in installed_formats(handle,system):
+                raise ValueError("format disabled by installed console definition")
             target = handle/filename
             if checksum:
                 for other in db.execute("""SELECT path FROM locations JOIN contents ON contents.id=content_id

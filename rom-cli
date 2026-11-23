@@ -238,8 +238,8 @@ mirror_list() {
 pick_mirror_files() {
     local query="$1"
     local entries
-    entries=$(mirror_list "$query")
-    [[ -n "$entries" ]] || return 1
+    entries=$(mirror_list "$query") || return 1
+    [[ -n "$entries" ]] || return 0
 
     printf '%s' "$entries" \
     | sed '/^$/d' \
@@ -335,9 +335,10 @@ main() {
             read -rp "$(printf '%s::%s filter (leave empty for all): ' "$c_blu" "$c_reset")" query
         fi
         info "browsing mirror: $ROM_CLI_MIRROR"
-        local mchosen
-        mapfile -t mchosen < <(pick_mirror_files "$query")
-        ((${#mchosen[@]})) || { warn "nothing selected (or mirror empty / unreachable)"; exit 0; }
+        local mchosen selection
+        selection=$(pick_mirror_files "$query") || die "mirror listing failed"
+        [[ -n "$selection" ]] || { warn "nothing selected"; exit 0; }
+        mapfile -t mchosen <<< "$selection"
         download_mirror_files "${mchosen[@]}"
         return
     fi
@@ -358,9 +359,14 @@ main() {
 
     info "selected: $id"
     [[ "$id" =~ ^[A-Za-z0-9_-][A-Za-z0-9._-]*$ ]] || die "invalid item identifier"
-    local chosen
-    mapfile -t chosen < <(pick_files "$id")
-    ((${#chosen[@]})) || { warn "no files selected"; exit 0; }
+    local chosen selection rc
+    selection=$(pick_files "$id") || {
+        rc=$?
+        [[ $rc == 130 ]] && { warn "cancelled"; exit 0; }
+        die "could not select item files"
+    }
+    [[ -n "$selection" ]] || { warn "no files selected"; exit 0; }
+    mapfile -t chosen <<< "$selection"
 
     download_files "$id" "${chosen[@]}"
 }

@@ -75,13 +75,18 @@ class LibraryTests(unittest.TestCase):
         self.assertEqual(self.report()[0]["status"],"verified")
 
     def test_failures_clean_up(self):
+        definition = self.folder/"systeminfo.txt"
+        definition.write_text("Supported file extensions:\n.iso .ISO\n")
+        with self.assertRaisesRegex(ValueError,"disabled"):
+            self.put()
+        definition.unlink()
         for failure in (OSError("full disk"),ConnectionError("interrupted")):
             with patch("library.installer.transfer",side_effect=failure), self.assertRaises(OSError):
                 self.put()
         with self.assertRaises(ValueError):
             self.put(checksum="0"*64)
         self.assertFalse(list(self.folder.iterdir()))
-        self.assertEqual(self.db.execute("SELECT count(*) FROM downloads WHERE status='failed'").fetchone()[0],3)
+        self.assertEqual(self.db.execute("SELECT count(*) FROM downloads WHERE status='failed'").fetchone()[0],4)
 
     def test_link_and_format_rejection(self):
         with self.assertRaises(ValueError):

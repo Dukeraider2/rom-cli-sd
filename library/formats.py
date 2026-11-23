@@ -1,5 +1,24 @@
 """Lightweight structural checks. Full emulation compatibility is tested on-device."""
 import zipfile
+import re
+from .storage import regular
+from .platforms import FORMATS
+
+
+def installed_formats(handle, system):
+    try:
+        stream = regular(handle/"systeminfo.txt")
+    except FileNotFoundError:
+        return FORMATS[system]
+    with stream:
+        data = stream.read(65537)
+    if len(data)>65536:
+        raise ValueError("systeminfo.txt size exceeds limit")
+    match = re.search(r"^Supported file extensions:[ \t]*\r?\n([^\r\n]+)",data.decode("utf8"),re.M|re.I)
+    if not match:
+        raise ValueError("unrecognized systeminfo.txt format")
+    locally_supported = set(match[1].lower().split())
+    return tuple(ext for ext in FORMATS[system] if ext in locally_supported)
 
 SIGNATURES = {
     ".nes": (0,b"NES\x1a"), ".chd": (0,b"MComprHD"), ".cso": (0,b"CISO"),
