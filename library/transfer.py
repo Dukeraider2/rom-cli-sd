@@ -41,10 +41,16 @@ def source_stream(source):
         yield stream, int(length) if length is not None else None
 
 
-def transfer(source, stage, folder):
+def transfer(source, stage, folder, *, opener=source_stream, progress=None, expected=None, checksums=None):
     sha = hashlib.sha256()
+    hashes = {key:hashlib.new(key) for key in (checksums or {})}
     total = 0
-    with source_stream(source) as (stream, length):
+    with opener(source) as (stream, length):
+        if expected is not None and length is not None and length != expected:
+            raise ValueError("source size changed since selection")
+        length = length if length is not None else expected
+        if progress:
+            progress(0,length)
         if length is not None and (length <= 0 or length > LIMIT or length > shutil.disk_usage(folder).free):
             raise ValueError("invalid source size or insufficient space")
         for block in iter(lambda: stream.read(1024*1024), b""):
@@ -53,8 +59,14 @@ def transfer(source, stage, folder):
                 raise ValueError("size limit exceeded")
             stage.write(block)
             sha.update(block)
+            for value in hashes.values():
+                value.update(block)
+            if progress:
+                progress(total,length)
         if not total or length is not None and total != length:
             raise ValueError("incomplete transfer")
+    if any(value.hexdigest()!=checksums[key] for key,value in hashes.items()):
+        raise ValueError("source checksum mismatch")
     stage.flush()
     os.fsync(stage.fileno())
     return sha.hexdigest(), total

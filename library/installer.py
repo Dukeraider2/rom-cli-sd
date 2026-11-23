@@ -46,7 +46,7 @@ def reserve(db, platform, folder, filename, original, info, content, checksum, j
 
 
 def install(db, row, source, system=None, title=None, region="", revision="", disc=0, checksum=None,
-            probe=None, language="", edition=""):
+            probe=None, language="", edition="", transfer_options=None, phase=None, expected_folder=None):
     remote = "://" in source
     original = unquote(urlsplit(source).path.rsplit("/",1)[-1]) if remote else Path(source).name
     system = identify(original, system)
@@ -68,6 +68,10 @@ def install(db, row, source, system=None, title=None, region="", revision="", di
     info = display, normalized, system, region, revision, disc, language, edition
     try:
         with pinned(folder) as handle:
+            if expected_folder is not None:
+                current=handle.stat()
+                if (str(folder),str(current.st_dev),str(current.st_ino))!=expected_folder:
+                    raise ValueError("confirmed storage changed")
             if Path(filename).suffix.lower() not in installed_formats(handle,system):
                 raise ValueError("format disabled by installed console definition")
             target = handle/filename
@@ -99,12 +103,16 @@ def install(db, row, source, system=None, title=None, region="", revision="", di
                         with db:
                             db.execute("UPDATE downloads SET stage=?,stage_dev=?,stage_ino=? WHERE id=?",
                                        (stagepath.name,str(identity.st_dev),str(identity.st_ino),job))
-                        content = transfer(source, stage, handle)
+                        content = transfer(source, stage, handle, **(transfer_options or {}))
+                        if phase:
+                            phase("verifying")
                         validate(stage, Path(filename).suffix.lower())
                     if checksum and content[0] != checksum:
                         raise ValueError("SHA-256 mismatch")
                     if existing and existing != content:
                         raise FileExistsError(filename)
+                if phase:
+                    phase("installing")
                 with db:
                     db.execute("BEGIN IMMEDIATE")
                     for other in db.execute("""SELECT path, EXISTS(SELECT 1 FROM installations i
