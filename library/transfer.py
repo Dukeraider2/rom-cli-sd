@@ -49,6 +49,8 @@ def transfer(source, stage, folder, *, opener=source_stream, progress=None, expe
         if expected is not None and length is not None and length != expected:
             raise ValueError("source size changed since selection")
         length = length if length is not None else expected
+        if progress and length is None and not hashes:
+            raise ValueError("Source must supply a byte length or checksum before installation")
         if progress:
             progress(0,length)
         if length is not None and (length <= 0 or length > LIMIT or length > shutil.disk_usage(folder).free):

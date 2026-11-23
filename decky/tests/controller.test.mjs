@@ -30,7 +30,7 @@ test("controller workflow previews a destination and requires a separate activat
   async function handler(version,op,args){
     assert.equal(version,1);calls.push([op,args]);
     return {ok:true,data:({search:{results:[hit]},list_platforms:[{platform:"retrodeck",root:"/fixture",status:"ready"}],
-      get_result:{destination:"/fixture/gba/Demo.gba",duplicate:"no known match",token:"x",file:hit},enqueue:{id:"job"},list_jobs:[]})[op]};
+      get_result:{destination:"/fixture/gba/Demo.gba",duplicate:"no known match",token:"x",file:hit,can_install:true},enqueue:{id:"job"},list_jobs:[]})[op]};
   }
   let view;
   await act(async()=>{view=renderer.create(mountable(handler));});

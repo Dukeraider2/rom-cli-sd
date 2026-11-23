@@ -11,5 +11,5 @@ class ContractTests(unittest.TestCase):
                         ("search",{"url":"http://invalid"}),("list_platforms",{"user":"alternate"})]:
             self.assertEqual(api.request(1,op,args)["error"]["code"],"invalid_request")
         self.assertEqual(api.request(2,"list_platforms",{})["error"]["code"],"version")
-        self.assertEqual(api.request(1,"enqueue",dict(token="0"*32,confirmed=True))["error"]["code"],"expired")
+        self.assertEqual(api.request(1,"get_result",dict(result="0"*64,platform="emudeck",system="gba"))["error"]["code"],"expired")
 

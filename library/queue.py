@@ -76,14 +76,21 @@ class Queue:
                 raise RequestError("unsupported","Installed console excludes this format")
             stamp=handle.stat()
             target=handle/data["name"]
-            duplicate="filename exists" if target.exists() or target.is_symlink() else "no known match"
+            linked=target.is_symlink()
+            exists=target.exists()
+            duplicate="existing filename" if exists else "no known match"
             checksum=data["checksums"].get("sha256")
             if checksum:
                 with closing(manifest.catalog_reader(self.folder/"manifest.sqlite3")) as db:
                     if db.execute("""SELECT 1 FROM contents JOIN locations ON content_id=contents.id
                                      WHERE sha256=? AND root=? LIMIT 1""",(checksum,str(folder.parent))).fetchone():
                         duplicate="checksum recorded; installer will verify"
+            if linked:
+                duplicate="Linked destination cannot be used"
+            elif exists and not checksum:
+                duplicate="File already exists. Inspect it in Installed library."
         return dict(destination=str(folder/data["name"]),duplicate=duplicate,
+                    can_install=not linked and (not exists or bool(checksum)),
                     identity=[str(folder),str(stamp.st_dev),str(stamp.st_ino)])
 
     def enqueue(self,token,data,platform,system,identity):

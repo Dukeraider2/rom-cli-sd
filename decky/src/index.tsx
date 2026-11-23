@@ -7,7 +7,7 @@ type Suite="emudeck"|"retrodeck";
 type FileHit={id:string;provider:string;item:string;name:string;title:string;systems:string[];size:number|null;checksums:Record<string,string>};
 type Results={results:FileHit[];more:boolean;more_files:boolean};
 type Platform={platform:Suite;status:string;root:string|null};
-type Preview={destination:string;duplicate:string;token:string;file:FileHit};
+type Preview={destination:string;duplicate:string;token:string;file:FileHit;can_install:boolean};
 type Job={id:string;name:string;platform:Suite;state:string;bytes:number;total:number|null;error:string|null};
 type Game={id:number;game_id:number;display_title:string;system:string;platform:Suite;path:string;recorded_status:string;verified_at:string};
 type Report={count:number;findings:{status:string;path?:string;reason?:string}[]};
@@ -89,7 +89,7 @@ function Content(){
     case "confirm": content=hit&&preview&&<><p>{hit.name}<br/>{hit.provider} · {hit.item}<br/>{system.toUpperCase()} · {label(suite)}</p>
       <p>{preview.destination}<br/>{preview.duplicate}</p><p>{bytes(hit.size)}<br/>{Object.entries(hit.checksums).map(([k,v])=>k+" "+v).join(" · ")||"No source checksum; local SHA-256 will be recorded."}</p>
       {button("I’m authorized · Download and install",()=>load(async()=>{await call("enqueue",{token:preview.token,confirmed:true});return call<Job[]>("list_jobs",{page:1});},
-        r=>{setJobs(r);setListPage(1);go("jobs");}))}</>;break;
+        r=>{setJobs(r);setListPage(1);go("jobs");}),!preview.can_install)}</>;break;
     case "jobs": content=<>{!jobs.length&&<p>No downloads on this page.</p>}{jobs.map(j=>{
       const action=jobAction(j.state);
       return <div key={j.id}><p>{j.name}<br/>{label(j.platform)} · {j.state.replace("_"," ")}<br/>{bytes(j.bytes)} / {bytes(j.total)}<br/>{j.error}</p>

@@ -11,6 +11,16 @@ from library.queue import Queue
 
 
 class QueueTests(unittest.TestCase):
+    def test_unframed_source_requires_digest(self):
+        from contextlib import contextmanager
+        from io import BytesIO
+        from library.transfer import transfer
+        @contextmanager
+        def unframed(_):
+            yield BytesIO(b"data"),None
+        with self.assertRaisesRegex(ValueError,"length or checksum"):
+            transfer("source",BytesIO(),self.root,opener=unframed,progress=lambda *_:None)
+
     def setUp(self):
         tmp=tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
@@ -32,7 +42,10 @@ class QueueTests(unittest.TestCase):
                 self.end_headers()
                 arrived.set()
                 release.wait(5)
-                self.wfile.write(body)
+                try:
+                    self.wfile.write(body)
+                except ConnectionError:
+                    pass  # Expected when the client cancels or unloads.
             def log_message(self,*args):
                 pass
         server=ThreadingHTTPServer(("127.0.0.1",0),Handler)
@@ -79,4 +92,22 @@ class QueueTests(unittest.TestCase):
         self.release.set()
         self.wait_state(self.enqueue("b"),["needs_attention"])
         self.assertEqual(list(self.root.iterdir()),[])
+
+    def test_unload_interrupts_response_and_does_not_publish(self):
+        job=self.enqueue()
+        self.assertTrue(self.arrived.wait(3))
+        self.queue.close()
+        self.assertEqual(self.queue.jobs(job)["state"],"needs_attention")
+        self.assertEqual(list(self.root.iterdir()),[])
+
+    def test_bounded_queue(self):
+        job=self.enqueue()
+        self.assertTrue(self.arrived.wait(3))
+        self.assertEqual(self.enqueue("different-token"),job)
+        for i in range(15):
+            data=dict(self.data,id=str(i))
+            self.queue.enqueue(str(i),data,"emudeck","gba",self.identity)
+        with self.assertRaisesRegex(ValueError,"Queue limit"):
+            self.queue.enqueue("full",dict(self.data,id="another"),"emudeck","gba",self.identity)
+        self.queue.close()
 

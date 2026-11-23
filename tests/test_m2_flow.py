@@ -76,6 +76,8 @@ class FlowTests(unittest.TestCase):
                 restarted=Queue(home/"catalog",Network(source,True),home)
                 try:
                     self.assertEqual(restarted.jobs(job)["state"],"needs_attention")
+                    replay=Service(restarted).request(1,"enqueue",dict(token=preview["token"],confirmed=True))
+                    self.assertEqual(replay["data"]["id"],job)
                 finally:
                     restarted.close()
 

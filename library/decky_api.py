@@ -124,6 +124,10 @@ class Service:
             self.remember(self.tokens,token,(data,a["platform"],a["system"],identity))
             return dict(**preview,token=token,file={k:v for k,v in data.items() if k!="url"})
         if op=="enqueue":
+            with closing(queue.db()) as db:
+                old=db.execute("SELECT id FROM jobs WHERE token=?",(a["token"],)).fetchone()
+                if old:
+                    return {"id":old["id"]}
             values=self.recall(self.tokens,a["token"])
             return {"id":queue.enqueue(a["token"],*values)}
         if op=="list_jobs":
