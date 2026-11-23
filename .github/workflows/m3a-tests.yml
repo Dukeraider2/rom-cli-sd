@@ -1,0 +1,45 @@
+name: M3A offline transcription tests
+on:
+  push:
+    branches: [feature/m3a-offline-title-transcription]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -B -m unittest discover -s tests -v
+      - run: python3 -m experiments.m3a.fixtures --mock --output experiments/m3a/local/mock-fixtures
+      - run: |
+          mkdir -p experiments/m3a/local/mock-models
+          printf mock > experiments/m3a/local/mock-models/ggml-tiny.en.bin
+          printf mock > experiments/m3a/local/mock-models/ggml-base.en.bin
+          chmod +x experiments/m3a/fake_engine.py
+          python3 -m experiments.m3a.benchmark \
+            --engine experiments/m3a/fake_engine.py \
+            --models-dir experiments/m3a/local/mock-models \
+            --fixtures experiments/m3a/local/mock-fixtures \
+            --mock --repeats 2 \
+            --output experiments/m3a/local/mock-results.json
+      - run: python3 -B tests/benchmark_m2.py
+      - run: bash -n rom-cli && bash -n PKGBUILD
+      - run: bash rom-cli --version && bash rom-cli --library platforms
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix decky --ignore-scripts
+      - run: npm --prefix decky run check && npm --prefix decky test && npm --prefix decky run build
+      - run: python3 decky/package_plugin.py decky/rom-library-m2.zip
+      - run: |
+          python3 - <<'PY'
+          from zipfile import ZipFile
+          with ZipFile("decky/rom-library-m2.zip") as z:
+              names=z.namelist()
+          assert not any("experiments/" in n or "ggml-" in n or ".wav" in n for n in names)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m3a-mock-pipeline-only
+          path: experiments/m3a/local/mock-results.json
