@@ -10,13 +10,15 @@
 
 ## Mission
 
+**Progress review, 2026-11-23.** The feature branch at `4058db4` passed Linux CI, including 33 Python tests, three frontend tests, launcher checks and plugin packaging. The fixture workflow covers both configured suites. Host follow-up includes explicit controlled-server redirect and timeout cases. Physical sign-off still requires controller/OSK navigation, install and launch in each suite, actual Flatpak access, microSD removal/remount and plugin reload/rollback. Capture those outcomes in the device matrix before a production release. [Branch-head CI](https://github.com/Dukeraider2/rom-cli-sd/actions/runs/45283004903) · [M3 decision and first deliverable](M3-local-voice-search.md)
+
 Checked implementation rows refer to branch and fixture evidence in the [M2 verification report](../m2-verification.md). Combined requirements that include unperformed hardware checks remain open. The [device matrix and rollback procedure](../../decky/README.md) cover both suites.
 
 Deliver a controller-first Steam Deck Gaming Mode workflow for **authorized** homebrew, public-domain, openly licensed, and otherwise lawfully accessible user-provided files:
 
 **search → choose result → choose system and EmuDeck/RetroDECK destination → inspect duplicates → explicitly confirm → download with progress/cancel → verify → install → show how to discover/play.**
 
-M1 already implements the SQLite catalog, configured suite discovery, a limited single-file format allowlist, safe managed installation, reconciliation, and a JSON-producing CLI. Its existing interactive Bash downloader and managed installer are not yet one end-to-end workflow. M1 host tests are not proof of physical Steam Deck compatibility. M2 closes that gap and adds a Decky Loader frontend without weakening the existing backend safety model.
+M1 supplies the SQLite catalog, configured suite discovery, single-file format allowlist, managed installer, reconciliation and JSON CLI. M2 connects provider search to that installer through a persistent queue and a controller-facing Decky frontend. The interactive Bash downloader remains available independently.
 
 ## Non-goals and boundaries
 
