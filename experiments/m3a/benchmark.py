@@ -136,6 +136,12 @@ def run(args) -> dict:
                        "metrics": result.get("metrics", {}), "error": result.get("error")}
                 rows.append(row)
     engine_path = Path(args.engine).resolve()
+    cpu_model = None
+    try:
+        cpu_model = next((line.split(":", 1)[1].strip() for line in Path("/proc/cpuinfo").read_text().splitlines()
+                          if line.lower().startswith("model name")), None)
+    except OSError:
+        pass
     report = {
         "schema": 1,
         "measurement_class": "mock_pipeline_only" if args.mock else "real_whisper_cpp_fresh_process",
@@ -150,7 +156,7 @@ def run(args) -> dict:
                              "-tp", "0", "-tpi", "0", "-bs", "5", "-bo", "5",
                              "-otxt", "-of", "<private-temporary-output-stem>"],
         "environment": {"platform": platform.platform(), "machine": platform.machine(),
-                        "python": sys.version.split()[0], "cpu_count": os.cpu_count(),
+                        "python": sys.version.split()[0], "cpu_count": os.cpu_count(), "cpu_model": cpu_model,
                         "threads": args.threads, "timeout_seconds": args.timeout,
                         "repeats": args.repeats, "backend": "cpu", "model_lifecycle": "fresh_process_each_clip",
                         "first_run": "new process; may have cold filesystem cache",
