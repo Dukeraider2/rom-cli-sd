@@ -1,0 +1,68 @@
+name: M3A real synthetic speech benchmark
+on:
+  push:
+    branches: [feature/m3a-offline-title-transcription]
+    paths:
+      - 'experiments/m3a/**'
+      - '.github/workflows/m3a-real-benchmark.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic-cpu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install CI-only speech fixture tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq espeak ffmpeg
+          espeak --version
+          ffmpeg -version | head -n 1
+          cmake --version | head -n 1
+      - name: Build pinned whisper.cpp CPU-only
+        run: |
+          git clone --quiet https://github.com/ggml-org/whisper.cpp.git "$RUNNER_TEMP/whisper.cpp"
+          git -C "$RUNNER_TEMP/whisper.cpp" checkout --quiet 96ec4d9823e9d0211944172da35f9f29134af990
+          test "$(git -C "$RUNNER_TEMP/whisper.cpp" rev-parse HEAD)" = "96ec4d9823e9d0211944172da35f9f29134af990"
+          cmake -S "$RUNNER_TEMP/whisper.cpp" -B "$RUNNER_TEMP/whisper.cpp/build" -DCMAKE_BUILD_TYPE=Release -DGGML_VULKAN=OFF
+          cmake --build "$RUNNER_TEMP/whisper.cpp/build" --config Release -j 4
+          "$RUNNER_TEMP/whisper.cpp/build/bin/whisper-cli" --version
+      - name: Explicitly acquire and verify model weights
+        run: |
+          sh "$RUNNER_TEMP/whisper.cpp/models/download-ggml-model.sh" tiny.en
+          sh "$RUNNER_TEMP/whisper.cpp/models/download-ggml-model.sh" base.en
+          echo "c78c86eb1a8faa21b369bcd33207cc90d64ae9df  $RUNNER_TEMP/whisper.cpp/models/ggml-tiny.en.bin" | sha1sum -c -
+          echo "137c40403d78fd54d454da0f9bd998f78703390c  $RUNNER_TEMP/whisper.cpp/models/ggml-base.en.bin" | sha1sum -c -
+          sha256sum "$RUNNER_TEMP/whisper.cpp/models/ggml-tiny.en.bin" "$RUNNER_TEMP/whisper.cpp/models/ggml-base.en.bin"
+      - name: Generate synthetic speech and run real engine offline
+        run: |
+          python3 -m experiments.m3a.fixtures --output experiments/m3a/local/fixtures
+          python3 -m experiments.m3a.benchmark \
+            --engine "$RUNNER_TEMP/whisper.cpp/build/bin/whisper-cli" \
+            --models-dir "$RUNNER_TEMP/whisper.cpp/models" \
+            --fixtures experiments/m3a/local/fixtures \
+            --catalog experiments/m3a/catalog.json \
+            --threads 4 --repeats 2 --timeout 60 \
+            --output experiments/m3a/local/real-synthetic-results.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("experiments/m3a/local/real-synthetic-results.json").read_text())
+          print("REAL ENGINE:", r["engine"], "HOST:", r["environment"])
+          for name, data in r["summary"].items():
+              print("MODEL:", name, json.dumps(data, sort_keys=True))
+              if data["errors"]:
+                  raise SystemExit("Engine returned errors: " + repr(data["errors"]))
+          for row in r["rows"]:
+              print("TRANSCRIPT:", json.dumps({k:row[k] for k in ("model","fixture","kind","repeat","expected","transcript","retrieved","ok")}))
+          PY
+      - name: Upload real synthetic benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3a-real-synthetic-cpu
+          path: |
+            experiments/m3a/local/real-synthetic-results.json
+            experiments/m3a/local/fixtures/manifest.json
+          if-no-files-found: warn
