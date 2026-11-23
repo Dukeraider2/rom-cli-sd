@@ -1,5 +1,6 @@
 import hashlib
 import shutil
+import sys
 import tempfile
 import unittest
 from contextlib import closing
@@ -55,6 +56,8 @@ class LibraryTests(unittest.TestCase):
 
     def test_verify_scan(self):
         path = Path(self.put()["path"])
+        self.assertEqual(self.report()[0]["method"],"stat-cache" if sys.platform=="linux" else "sha256")
+        self.assertEqual(scan(self.db,self.row,"psx",force_hash=True)[0]["method"],"sha256")
         path.rename(self.folder/"new.chd")
         shutil.copy(self.folder/"new.chd",self.folder/"another.chd")
         self.assertEqual({r["status"] for r in self.report()}, {"untracked","moved-or-renamed","duplicate"})
@@ -67,11 +70,16 @@ class LibraryTests(unittest.TestCase):
         self.assertEqual(self.report()[0]["status"],"unavailable")
 
     def test_recovery(self):
+        with patch("library.installer.publish",side_effect=OSError("disconnected before publication")):
+            with self.assertRaises(OSError):
+                self.put()
         with patch("library.installer.digest",side_effect=OSError("unmounted")):
             with self.assertRaises(OSError):
                 self.put()
         self.assertEqual(self.report()[0]["status"],"pending")
         self.assertEqual(self.report(True)[0]["status"],"recovered")
+        self.assertEqual([r[0] for r in self.db.execute("SELECT status FROM downloads ORDER BY id")],
+                         ["failed","recovered"])
         self.assertEqual(self.report()[0]["status"],"verified")
 
     def test_failures_clean_up(self):

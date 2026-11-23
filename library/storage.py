@@ -65,3 +65,23 @@ def checked_leaf(folder, path):
         raise ValueError("manifest path outside selected console")
     return basename(path.name)
 
+
+def publish(stage, target):
+    """Atomically publish a complete file without replacing an existing leaf."""
+    if os.name == "nt":
+        os.rename(stage, target)  # Windows rename rejects an existing target.
+        return
+    import ctypes
+    import errno
+    rename = getattr(ctypes.CDLL(None,use_errno=True),"renameat2",None)
+    if rename is not None:
+        rename.argtypes = [ctypes.c_int,ctypes.c_char_p,ctypes.c_int,ctypes.c_char_p,ctypes.c_uint]
+        # Both paths are absolute and anchored to our pinned directory handle.
+        if rename(-100,os.fsencode(stage),-100,os.fsencode(target),1) == 0:
+            return
+        error = ctypes.get_errno()
+        if error not in (errno.ENOSYS,errno.EOPNOTSUPP,errno.EINVAL):
+            raise OSError(error,os.strerror(error),str(target))
+    os.link(stage,target)
+    stage.unlink()
+

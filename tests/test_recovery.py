@@ -9,6 +9,7 @@ from unittest.mock import patch
 from library.installer import install
 from library.manifest import connect
 from library.reconcile import scan
+from library.storage import publish
 
 
 class RecoveryTests(unittest.TestCase):
@@ -27,13 +28,12 @@ class RecoveryTests(unittest.TestCase):
 
     def test_pending_reservation_blocks_second_name(self):
         entered, release = threading.Event(),threading.Event()
-        link = os.link
         errors = []
         def pause(src,dest):
             entered.set()
             if not release.wait(5):
                 raise RuntimeError("timed out waiting for other install")
-            link(src,dest)
+            publish(src,dest)
         def worker():
             db = connect(self.path)
             try:
@@ -42,7 +42,7 @@ class RecoveryTests(unittest.TestCase):
                 errors.append(str(exc))
             finally:
                 db.close()
-        with patch("library.installer.os.link",side_effect=pause):
+        with patch("library.installer.publish",side_effect=pause):
             thread = threading.Thread(target=worker)
             thread.start()
             try:
@@ -62,6 +62,14 @@ class RecoveryTests(unittest.TestCase):
         with patch("library.installer.transfer",side_effect=AssertionError):
             with self.assertRaisesRegex(ValueError,"identical"):
                 install(self.db,self.row,str(self.src),title="Alias",checksum=result["sha256"])
+
+    def test_publication_refuses_concurrent_collision(self):
+        destination=self.folder/self.src.name
+        destination.write_bytes(b"already here")
+        with self.assertRaises(FileExistsError):
+            publish(self.src,destination)
+        self.assertEqual(destination.read_bytes(),b"already here")
+        self.assertEqual(self.src.read_bytes(),b"local demo")
 
     @unittest.skipUnless(sys.platform=="linux","Linux worker identity and directory pinning")
     def test_killed_transfer_cleanup(self):

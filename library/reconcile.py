@@ -4,6 +4,7 @@ from pathlib import Path
 from .platforms import destination, FORMATS
 from .storage import checked_leaf, digest, fingerprint, pinned
 import stat
+import sys
 from .recovery import inspect_jobs
 
 
@@ -34,7 +35,7 @@ def scan(db, row, system, repair=False, probe=None, force_hash=False):
                     raise ValueError("manifest content mismatch")
                 expected.add(name)
                 metadata = (handle/name).lstat()
-                cached = (not force_hash and record["status"] == "installed" and stat.S_ISREG(metadata.st_mode)
+                cached = (sys.platform == "linux" and not force_hash and record["status"] == "installed" and stat.S_ISREG(metadata.st_mode)
                           and fingerprint(metadata) == record["fingerprint"] and metadata.st_ino != 0)
                 sha = record["sha256"] if cached else digest(handle/name)[0]
                 seen[sha].append(name)
@@ -46,7 +47,8 @@ def scan(db, row, system, repair=False, probe=None, force_hash=False):
                             db.execute("""UPDATE installations SET status='installed',installed_at=CURRENT_TIMESTAMP,
                                        verified_at=CURRENT_TIMESTAMP WHERE id=? AND status='pending'""",(record["id"],))
                             db.execute("""UPDATE downloads SET status='recovered',completed_at=CURRENT_TIMESTAMP
-                                       WHERE installation_id=? AND status IN ('interrupted','failed')""",(record["id"],))
+                                       WHERE id=(SELECT max(id) FROM downloads WHERE installation_id=?)
+                                       AND status IN ('interrupted','failed')""",(record["id"],))
                     report("recovered" if repair else "pending",path=path)
                 else:
                     report("verified",path=path,method="stat-cache" if cached else "sha256")

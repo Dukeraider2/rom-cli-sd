@@ -47,3 +47,14 @@ class PlatformTests(unittest.TestCase):
                 identify(name)
         self.assertEqual(names("disc.chd","Demo","USA","1",2)[2], "Demo (USA) (Rev 1) (Disc 2).chd")
 
+    def test_both_and_neither(self):
+        self.assertFalse(discover("emudeck", self.home)["installed"])
+        self.assertFalse(discover("retrodeck", self.home, lambda *_:"")["installed"])
+        cfg=self.home/".config/EmuDeck/settings.sh"
+        cfg.parent.mkdir(parents=True)
+        cfg.write_text('romsPath="~/external storage"')
+        (self.cfg/"retrodeck.json").write_text(json.dumps({"paths":{
+            "rd_home_path":str(self.home),"roms_path":str(self.root)}}))
+        for suite in ("emudeck","retrodeck"):
+            self.assertEqual(discover(suite,self.home,lambda *_:"installed")["root"],str(self.root))
+

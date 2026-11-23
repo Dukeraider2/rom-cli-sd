@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.parse import urlsplit, unquote
 from .naming import identify, names
 from .platforms import destination
-from .storage import checked_leaf, digest, pinned
+from .storage import checked_leaf, digest, pinned, publish
 from .transfer import transfer
 from .formats import installed_formats, validate
 from .storage import regular
@@ -121,7 +121,10 @@ def install(db, row, source, system=None, title=None, region="", revision="", di
                     iid = reserve(db,row["platform"],folder,filename,original,info,content,checksum,job,
                                   content[1] if stagepath else 0)
                 if existing is None:
-                    os.link(stagepath,target)  # Atomic create-if-absent, same filesystem.
+                    publish(stagepath,target)
+                    stagepath = None
+                    with db:
+                        db.execute("UPDATE downloads SET stage=NULL WHERE id=?", (job,))
                     if os.name == "posix":
                         fd = os.open(handle, os.O_RDONLY | os.O_DIRECTORY)
                         try:
