@@ -1,7 +1,7 @@
 name: Library tests
 on:
   push:
-    branches: [feature/emudeck-retrodeck-integration]
+    branches: [feature/emudeck-retrodeck-integration, feature/m2-steamdeck-hardware-validation]
   pull_request:
 permissions:
   contents: read
@@ -20,6 +20,29 @@ jobs:
       - run: npm ci --prefix decky --ignore-scripts
       - run: npm --prefix decky run check && npm --prefix decky test && npm --prefix decky run build
       - run: python3 decky/package_plugin.py decky/rom-library-m2.zip
+      - name: Verify deployment ZIP
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import PurePosixPath
+          from zipfile import ZipFile
+
+          with ZipFile("decky/rom-library-m2.zip") as bundle:
+              assert bundle.testzip() is None
+              names = bundle.namelist()
+              assert len(names) == len(set(names))
+              assert {"ROM Library/main.py", "ROM Library/dist/index.js", "ROM Library/plugin.json"} <= set(names)
+              manifest = json.loads(bundle.read("ROM Library/plugin.json"))
+              assert manifest["flags"] == []
+              for name in names:
+                  path = PurePosixPath(name)
+                  assert path.parts[0] == "ROM Library" and ".." not in path.parts
+                  assert path.suffix in {".py", ".ts", ".tsx", ".js", ".json", ".md", ""}, name
+                  assert path.suffix or path.name == "LICENSE", name
+                  assert not {"experiments", "tests", "models", "recordings", "node_modules", "__pycache__"}.intersection(path.parts), name
+              print(f"{len(names)} unique members, valid CRCs, unprivileged manifest")
+          PY
+          sha256sum decky/rom-library-m2.zip
       - uses: actions/upload-artifact@v4
         with:
           name: rom-library-m2
