@@ -113,3 +113,5 @@ The Galileo device passed 33 backend tests, real EmuDeck path discovery, live Ar
 **0.2.1 retest.** Live installation and unprivileged backend startup now pass. The first screen opened, all installed bytes matched CI, and the live queue contained zero jobs. Gate A still needs confirmation of the live RPC/suite results and reopen behavior. Controller acceptance and the release decision remain open. [Live process and queue observations](m2-steamdeck-hardware.md)
 
 **Archive search update.** Live 0.2.1 displayed a TLS verification error. Version 0.2.2 passed a real Archive query and negative hostname check on the physical Deck with the loader's SSL libraries. Controller-driven search through the updated live plugin still requires confirmation. [Diagnosis and tested ZIP](m2-steamdeck-hardware.md)
+
+**Live 0.2.2 interaction.** The operator reached the EmuDeck preview through Archive search and NES selection, saw both suites ready and returned with Back. A read-only check confirmed zero live jobs and no destination file in either suite. The seat was KDE Wayland. Confirmed installation, reload and native Gaming Mode acceptance remain open.
