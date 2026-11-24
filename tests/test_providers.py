@@ -3,7 +3,8 @@ import os
 import ssl
 import unittest
 from unittest.mock import patch
-from library.providers import search
+from urllib.parse import parse_qs, urlsplit
+from library.providers import archive_page, search
 from library.provider_http import Network, verified_tls_context
 
 
@@ -28,6 +29,20 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(len({r["id"] for r in one+two}),25)
         with self.assertRaises(ValueError):
             network.check("mirror","http://127.0.0.1/elsewhere")
+
+    def test_partial_archive_title_ranks_homebrew_and_preserves_other_pages(self):
+        network = Network()
+        def metadata(provider, url):
+            params = parse_qs(urlsplit(url).query)
+            query = params["q"][0]
+            self.assertIn('title:"squirrel" AND title:"nova"', query)
+            items = ["other1", "other2"] if "AND NOT" in query else ["nova"]
+            index = int(params["page"][0]) - 1
+            docs = [{"identifier": item} for item in items[index:index+1]]
+            return json.dumps({"response": {"docs": docs, "numFound": len(items)}})
+        network.metadata = metadata
+        for page, item, more in ((1, "nova", True), (2, "other1", True), (3, "other2", False)):
+            self.assertEqual(archive_page(network, "squirrel nova", page), ([{"identifier": item}], more))
 
     def test_archive_metadata(self):
         network=Network()

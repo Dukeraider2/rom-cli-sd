@@ -39,17 +39,38 @@ def candidate(provider, item, title, url, name, size=None, checksums=None, hint=
                 name=name,url=url,systems=systems,size=int(size) if size is not None else None,checksums=sums)
 
 
+def archive_page(network, query, page):
+    words = re.findall(r"[\w-]+", query)
+    if not words:
+        raise ValueError("enter a title")
+    terms = " AND ".join(f'title:"{word}"' for word in words)
+    collections = "(collection:homebrew OR collection:open_source_software OR collection:softwarelibrary_misc)"
+    homebrew = "(subject:homebrew OR collection:homebrew)"
+
+    def lookup(group, number):
+        params = urlencode({"q": f"{terms} AND {collections} AND {group}",
+                            "fl[]": "identifier", "rows": 1, "page": number,
+                            "output": "json", "sort[]": "identifier asc"})
+        url = "https://archive.org/advancedsearch.php?" + params
+        return json.loads(network.metadata("archive", url))["response"]
+
+    # Keep each metadata request bounded while presenting two disjoint groups.
+    preferred = lookup(homebrew, page)
+    count = int(preferred["numFound"])
+    if page < count:
+        return preferred["docs"], True
+    other_page = max(1, page - count)
+    other = lookup("NOT " + homebrew, other_page)
+    if page == count:
+        return preferred["docs"], bool(other["docs"])
+    return other["docs"], other_page < int(other["numFound"])
+
+
 def search(network,provider,query,system,page):
     if provider=="archive":
-        # Each page is one Archive item; page through its supported files separately.
-        words=" ".join(re.findall(r"[\w-]+",query))
-        if not words:
-            raise ValueError("enter a title")
-        params=urlencode({"q":f'title:"{words}" AND (collection:homebrew OR collection:open_source_software OR collection:softwarelibrary_misc)',
-                          "fl[]":"identifier","rows":1,"page":page,"output":"json","sort[]":"identifier asc"})
-        result=json.loads(network.metadata(provider,"https://archive.org/advancedsearch.php?"+params))["response"]
+        docs, more = archive_page(network, query, page)
         rows=[]
-        for doc in result["docs"][:1]:
+        for doc in docs[:1]:
             item=doc["identifier"]
             if not isinstance(item,str) or not re.fullmatch(r"[\w-][\w.-]{0,99}",item,re.ASCII):
                 raise ValueError("invalid source identifier")
@@ -66,7 +87,7 @@ def search(network,provider,query,system,page):
                     continue
                 if row:
                     rows.append(row)
-        return rows, page<int(result["numFound"])
+        return rows, more
     if provider!="mirror" or not network.mirror:
         raise ValueError("configure a mirror in Desktop Mode first")
     def links(url):
