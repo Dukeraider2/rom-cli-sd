@@ -48,8 +48,7 @@ jobs:
               print(f"{len(names)} unique members, valid CRCs, unprivileged manifest")
               with TemporaryDirectory() as tmp:
                   bundle.extractall(tmp)
-                  subprocess.run([sys.executable, "-I", "-B", "-c",
-                                  "import sys; sys.path.insert(0, sys.argv[1]); from library.decky_api import Service",
+                  subprocess.run([sys.executable, "-I", "-B", str(Path("tests/check_decky_runtime.py").resolve()),
                                   str(Path(tmp) / "ROM Library")], cwd=tmp, check=True)
           PY
           sha256sum decky/rom-library-m2.zip

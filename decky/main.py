@@ -1,5 +1,6 @@
 """Decky API v1 plugin entry point."""
 import asyncio
+import html
 import json
 import os
 import pwd
@@ -8,6 +9,10 @@ from pathlib import Path
 import decky
 
 sys.path.insert(0,decky.DECKY_PLUGIN_DIR)
+# Decky 3.3.1 freezes html but omits its parser, _markupbase and shlex.
+stdlib_fallback = Path(decky.DECKY_PLUGIN_DIR) / "third-party/cpython"
+sys.path.append(str(stdlib_fallback))
+html.__path__.append(str(stdlib_fallback / "html"))
 from library.decky_api import Service
 from library.manifest import default_path
 from library.provider_http import Network

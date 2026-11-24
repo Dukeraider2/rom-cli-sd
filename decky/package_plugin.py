@@ -20,6 +20,10 @@ def package(output, source_output=None):
         files["third-party/decky-api/"+name]=DECKY/"node_modules/@decky/api"/name
     runtime_names = {"main.py", "dist/index.js", "package.json", "plugin.json", "LICENSE",
                      "README.md", "third-party/decky-api/LICENSE"}
+    for leaf in ("LICENSE", "_markupbase.py", "shlex.py", "html/parser.py"):
+        name = "third-party/cpython/" + leaf
+        files[name] = DECKY/name
+        runtime_names.add(name)
     runtime = {name: path for name, path in files.items() if name in runtime_names
                or (path.parent == ROOT/"library" and path.suffix == ".py")}
     write_archive(Path(output), runtime)
