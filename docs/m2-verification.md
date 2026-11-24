@@ -1,6 +1,6 @@
 # M2 verification and release decision
 
-**Ready for supervised device validation. Production and Gaming Mode acceptance are BLOCKED.** The device matrix covers internal SSD, custom storage, microSD, OSK/controller navigation, Decky lifecycle and emulator launch for both suites. No physical Deck or connected Steam session was available. [Device procedure and rollback](../decky/README.md)
+**Physical SSH validation has started. Production and Gaming Mode acceptance remain open.** The original measurements below predate access to the Deck. The new device report records SSD and microSD results, installed components and remaining interactive checks. [Device results](m2-steamdeck-hardware.md) · [Device procedure and rollback](../decky/README.md)
 
 ## Implementation and compatibility
 
@@ -89,3 +89,7 @@ Branch: `feature/emudeck-retrodeck-integration`. Baseline: `7af3ecd`.
 
 [Implementation file diff](https://github.com/Dukeraider2/rom-cli-sd/compare/7af3ecd...19b2654). The final documentation commit adds the device procedure, updates the evidence checklist and records this assessment. No production release or pull request was created.
 
+
+## Physical SSH validation
+
+The Galileo device passed 33 backend tests, real EmuDeck path discovery, live Archive metadata pagination and disposable SSD/microSD mirror transfers. ES-DE scanned the disposable NES library. A standalone offscreen Nestopia launch completed. Interactive Gaming Mode, Decky ZIP installation and controller acceptance remain open. [Device inventory, recovery and measured results](m2-steamdeck-hardware.md)
