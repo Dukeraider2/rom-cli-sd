@@ -92,4 +92,4 @@ Branch: `feature/emudeck-retrodeck-integration`. Baseline: `7af3ecd`.
 
 ## Physical SSH validation
 
-The Galileo device passed 33 backend tests, real EmuDeck path discovery, live Archive metadata pagination and disposable SSD/microSD mirror transfers. ES-DE scanned the disposable NES library. A standalone offscreen Nestopia launch completed. Interactive Gaming Mode, Decky ZIP installation and controller acceptance remain open. [Device inventory, recovery and measured results](m2-steamdeck-hardware.md)
+The Galileo device passed 33 backend tests, real EmuDeck path discovery, live Archive metadata pagination and disposable SSD/microSD mirror transfers. EmuDeck ES-DE and RetroDECK each listed and launched the test cartridge using Mesen in separate SSH-controlled desktop tests. RetroDECK completed its official first run and verified read-write access from inside its Flatpak. Interactive Gaming Mode, Decky ZIP installation and controller acceptance remain open. [Device inventory, recovery and measured results](m2-steamdeck-hardware.md)

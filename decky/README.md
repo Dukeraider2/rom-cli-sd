@@ -52,10 +52,11 @@ Let installation finish, cancel queued transfers and unload the plugin through D
 
 | Check | EmuDeck | RetroDECK |
 |---|---|---|
-| Record actual SteamOS, Steam client, Decky and suite versions | BLOCKED | BLOCKED |
-| Discover internal, custom and microSD paths; verify effective access | BLOCKED | BLOCKED |
+| Record device and software inventory | SteamOS, Decky, ES-DE and EmuDeck recorded | SteamOS, Decky and RetroDECK recorded |
+| Discover configured ROM root and console access | Verified on microSD | Verified on internal SSD and inside Flatpak |
 | Controller/OSK search, focus, Back, confirmation and progress | BLOCKED | BLOCKED |
-| Authorized fixture install, duplicate, reconcile and emulator launch | BLOCKED | BLOCKED |
+| Authorized fixture installation and emulator launch in Desktop Mode | Passed in disposable library with installed ES-DE and Mesen | Passed in initialized suite with bundled ES-DE and Mesen |
+| Reconciliation after physical storage loss | Pending | Pending |
 | Remove/remount test medium, verify failure and retry, unload/reload | BLOCKED | BLOCKED |
 
 Run read-only discovery and backup first. Use an approved disposable library and removable medium for write and interruption tests. Record versions, paths, file digests, job state, launch outcome and observed UI latency for each row. An unattended action against a personal ROM collection is outside this procedure.
