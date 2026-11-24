@@ -1,6 +1,7 @@
 """Origin-scoped HTTP. Connect to a checked address, retaining the TLS hostname."""
 import http.client
 import ipaddress
+import os
 import socket
 import ssl
 import threading
@@ -8,6 +9,15 @@ import time
 from contextlib import contextmanager
 from urllib.parse import urljoin, urlsplit, unquote
 from .transfer import origin
+
+
+def verified_tls_context():
+    paths = ssl.get_default_verify_paths()
+    explicit_store = paths.openssl_cafile_env in os.environ or paths.openssl_capath_env in os.environ
+    # Decky's frozen OpenSSL searches /usr/lib/ssl on SteamOS.
+    if not explicit_store and not paths.cafile and not paths.capath and os.path.isfile("/etc/ssl/cert.pem"):
+        return ssl.create_default_context(cafile="/etc/ssl/cert.pem")
+    return ssl.create_default_context()
 
 
 class Network:
@@ -67,7 +77,7 @@ class Network:
                 conn.sock.settimeout(12)
                 conn.sock.connect(endpoint)
                 if parts.scheme=="https":
-                    conn.sock = ssl.create_default_context().wrap_socket(conn.sock,server_hostname=host)
+                    conn.sock = verified_tls_context().wrap_socket(conn.sock,server_hostname=host)
                 control=socket.socket(fileno=socket.dup(conn.sock.fileno()))
                 with self.lock:
                     if self.stopped.is_set():
