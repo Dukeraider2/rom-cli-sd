@@ -107,3 +107,5 @@ The Galileo device passed 33 backend tests, real EmuDeck path discovery, live Ar
 | G. Security and regression | BLOCKED | Regression suite and independent static review passed; live startup identity, confirmation and worker invariants await observation |
 
 **Release held.** The staged candidate and recovery snapshots were verified. At the last observation the active session was KDE Desktop and ROM Library awaited installation through Decky. [Device commands, prior desktop launches and preflight observations](m2-steamdeck-hardware.md)
+
+**Live gate update.** Gate A failed on installed 0.2.0. The operator saw the plugin, but the live loader logged a missing standard-library import before backend initialization. The 0.2.1 correction passed CI and its on-device extracted-package regression. Gate A awaits the corrected version's live-loader retest. Gates B–G remain blocked and the release remains held. [Live failure and replacement checksum](m2-steamdeck-hardware.md)
