@@ -93,3 +93,17 @@ Branch: `feature/emudeck-retrodeck-integration`. Baseline: `7af3ecd`.
 ## Physical SSH validation
 
 The Galileo device passed 33 backend tests, real EmuDeck path discovery, live Archive metadata pagination and disposable SSD/microSD mirror transfers. EmuDeck ES-DE and RetroDECK each listed and launched the test cartridge using Mesen in separate SSH-controlled desktop tests. RetroDECK completed its official first run and verified read-write access from inside its Flatpak. Interactive Gaming Mode, Decky ZIP installation and controller acceptance remain open. [Device inventory, recovery and measured results](m2-steamdeck-hardware.md)
+
+### Live acceptance gates at preflight
+
+| Gate | Status | Evidence still required |
+|---|---|---|
+| A. Live installation | BLOCKED | Official ZIP installation, frontend render, backend UID, versioned RPC and startup job count |
+| B. Controller and OSK | BLOCKED | Physical D-pad, OSK edit, focus recovery and Back with unchanged job count |
+| C. EmuDeck end-to-end | BLOCKED | Confirmed live job in the configured microSD root, library entry and launch |
+| D. RetroDECK end-to-end | BLOCKED | Confirmed live job in the internal root, library entry and launch |
+| E. Cancellation and recovery | BLOCKED | Live active cancel, retry, controlled interruption and loader unload/reload |
+| F. Performance and stability | BLOCKED | Gaming Mode timings, resource recovery, frame times and power observations |
+| G. Security and regression | BLOCKED | Regression suite and independent static review passed; live startup identity, confirmation and worker invariants await observation |
+
+**Release held.** The staged candidate and recovery snapshots were verified. At the last observation the active session was KDE Desktop and ROM Library awaited installation through Decky. [Device commands, prior desktop launches and preflight observations](m2-steamdeck-hardware.md)
