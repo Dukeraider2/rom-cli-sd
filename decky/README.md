@@ -13,10 +13,10 @@ npm ci --prefix decky --ignore-scripts
 npm --prefix decky run check
 npm --prefix decky test
 npm --prefix decky run build
-python3 decky/package_plugin.py decky/rom-library-m2.zip
+python3 decky/package_plugin.py decky/rom-library-m2.zip --source-output decky/rom-library-m2-source.zip
 ```
 
-The ZIP includes the frontend bundle, corresponding sources, Python backend, M1 library and license notices. TypeScript uses the official Decky React components and callable API. Development dependencies and Node stay on the build machine.
+Install the runtime ZIP containing the frontend bundle, Python backend, M1 library and license notices. CI publishes the corresponding frontend sources, vendored Decky API source, lockfile and build configuration in the sibling **rom-library-m2-source** artifact. TypeScript uses the official Decky React components and callable API. Development dependencies and Node stay on the build machine.
 
 ## Search, install and play
 
@@ -62,3 +62,7 @@ Run read-only discovery and backup first. Use an approved disposable library and
 
 Voice and TTS remain M3. See the repository's M2 verification report for host measurements and residual risks.
 
+
+## Hardware-validation build
+
+The physical SSH session and tested candidate digest are recorded in the [hardware report](../docs/m2-steamdeck-hardware.md). If removable storage disappears during staging cleanup, restore the original medium, unload the plugin, verify the worker exited and reconcile the original attempt before retrying. The installed suites may already manage a personal library. Use the isolated test fixture for command-line verification and the official ZIP installation screen for loader acceptance.

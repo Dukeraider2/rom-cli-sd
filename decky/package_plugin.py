@@ -1,5 +1,5 @@
-"""Package the built plugin, backend and corresponding frontend sources."""
-import sys
+"""Package the runtime plugin and, optionally, a companion source archive."""
+import argparse
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 
@@ -7,7 +7,7 @@ DECKY=Path(__file__).resolve().parent
 ROOT=DECKY.parent
 
 
-def package(output):
+def package(output, source_output=None):
     files={name:DECKY/name for name in ("main.py","dist/index.js","package.json","plugin.json",
            "package-lock.json","tsconfig.json","rollup.config.js")}
     files["LICENSE"]=ROOT/"LICENSE"
@@ -18,7 +18,17 @@ def package(output):
                 files[prefix+"/"+path.relative_to(folder).as_posix()]=path
     for name in ("LICENSE","package.json","README.md"):
         files["third-party/decky-api/"+name]=DECKY/"node_modules/@decky/api"/name
-    target=Path(output)
+    runtime_names = {"main.py", "dist/index.js", "package.json", "plugin.json", "LICENSE",
+                     "README.md", "third-party/decky-api/LICENSE"}
+    runtime = {name: path for name, path in files.items() if name in runtime_names
+               or (path.parent == ROOT/"library" and path.suffix == ".py")}
+    write_archive(Path(output), runtime)
+    if source_output:
+        files["package_plugin.py"] = DECKY/"package_plugin.py"
+        write_archive(Path(source_output), files)
+
+
+def write_archive(target, files):
     target.parent.mkdir(parents=True,exist_ok=True)
     with ZipFile(target,"w",ZIP_DEFLATED) as archive:
         for name,path in sorted(files.items()):
@@ -30,5 +40,9 @@ def package(output):
 
 
 if __name__=="__main__":
-    package(sys.argv[1])
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("output")
+    parser.add_argument("--source-output")
+    args = parser.parse_args()
+    package(args.output, args.source_output)
 

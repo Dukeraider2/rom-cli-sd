@@ -19,11 +19,15 @@ jobs:
           node-version: '22'
       - run: npm ci --prefix decky --ignore-scripts
       - run: npm --prefix decky run check && npm --prefix decky test && npm --prefix decky run build
-      - run: python3 decky/package_plugin.py decky/rom-library-m2.zip
+      - run: python3 decky/package_plugin.py decky/rom-library-m2.zip --source-output decky/rom-library-m2-source.zip
       - name: Verify deployment ZIP
         run: |
           python3 - <<'PY'
           import json
+          import subprocess
+          import sys
+          from tempfile import TemporaryDirectory
+          from pathlib import Path
           from pathlib import PurePosixPath
           from zipfile import ZipFile
 
@@ -39,12 +43,22 @@ jobs:
                   assert path.parts[0] == "ROM Library" and ".." not in path.parts
                   assert path.suffix in {".py", ".ts", ".tsx", ".js", ".json", ".md", ""}, name
                   assert path.suffix or path.name == "LICENSE", name
-                  assert not {"experiments", "tests", "models", "recordings", "node_modules", "__pycache__"}.intersection(path.parts), name
+                  assert not {"experiments", "tests", "models", "recordings", "node_modules", "__pycache__", "src"}.intersection(path.parts), name
+                  assert path.name not in {"package-lock.json", "tsconfig.json", "rollup.config.js"}, name
               print(f"{len(names)} unique members, valid CRCs, unprivileged manifest")
+              with TemporaryDirectory() as tmp:
+                  bundle.extractall(tmp)
+                  subprocess.run([sys.executable, "-I", "-B", "-c",
+                                  "import sys; sys.path.insert(0, sys.argv[1]); from library.decky_api import Service",
+                                  str(Path(tmp) / "ROM Library")], cwd=tmp, check=True)
           PY
           sha256sum decky/rom-library-m2.zip
       - uses: actions/upload-artifact@v4
         with:
           name: rom-library-m2
           path: decky/rom-library-m2.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rom-library-m2-source
+          path: decky/rom-library-m2-source.zip
 
