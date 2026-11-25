@@ -12,7 +12,11 @@ globalThis.IS_REACT_ACT_ENVIRONMENT=true;
 const require=createRequire(import.meta.url);
 const source=readFileSync(new URL("../src/index.tsx",import.meta.url),"utf8");
 const {outputText}=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2020}});
-function mountable(handler){
+class MapStorage extends Map {
+  getItem(key){return this.get(key) ?? null;}
+  setItem(key,value){this.set(key,value);}
+}
+function mountable(handler,localStorage=new MapStorage()){
   const exports={};
   const ui=Object.fromEntries(["ButtonItem","Focusable","PanelSection","PanelSectionRow","DropdownItem","TextField"].map(k=>[k,k]));
   const imports=name=>{
@@ -21,7 +25,7 @@ function mountable(handler){
     if(name==="./navigation.js")return navigation;
     return require(name);
   };
-  vm.runInNewContext(outputText,{exports,require:imports,setTimeout,clearTimeout,console});
+  vm.runInNewContext(outputText,{exports,require:imports,localStorage,setTimeout,clearTimeout,console});
   return exports.default.content;
 }
 test("controller workflow previews a destination and requires a separate activation to enqueue",async()=>{
@@ -45,3 +49,24 @@ test("controller workflow previews a destination and requires a separate activat
   await act(async()=>view.unmount());
 });
 
+
+test("Mirror remains selected after reopening and is used for the search",async()=>{
+  const storage=new MapStorage(),requests=[];
+  const handler=async(version,op,args)=>{
+    requests.push([op,args.provider]);
+    return {ok:true,data:{results:[]}};
+  };
+  let view;
+  const mount=async()=>{await act(async()=>{view=renderer.create(mountable(handler,storage));});};
+  const button=label=>view.root.findAllByType("ButtonItem").find(b=>b.props.children===label);
+  await mount();
+  await act(async()=>button("Source · Archive").props.onClick());
+  assert.ok(button("Source · Mirror"));
+  await act(async()=>view.unmount());
+  await mount();
+  assert.ok(button("Source · Mirror"));
+  await act(async()=>view.root.findByType("TextField").props.onChange({target:{value:"Cancel Test"}}));
+  await act(async()=>button("Search").props.onClick());
+  assert.deepEqual(requests,[["search","mirror"]]);
+  await act(async()=>view.unmount());
+});

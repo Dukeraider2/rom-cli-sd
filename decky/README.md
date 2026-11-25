@@ -1,6 +1,6 @@
 # ROM Library for Decky
 
-ROM Library 0.2.3 is a hardware-validation build for a Steam Deck with an existing Decky installation. It uses the logged-in user's M1 catalog and supports EmuDeck and RetroDECK. Both suites use their configured ROM roots and the M1 format allowlist. The ZIP includes the three pure-Python modules omitted by Decky 3.3.1 that are needed for HTML mirror indexes and quoted configuration paths, with their license. [Pinned CPython source](https://github.com/python/cpython/tree/v3.14.6/Lib)
+ROM Library 0.2.4 is a hardware-validation build for a Steam Deck with an existing Decky installation. It uses the logged-in user's M1 catalog and supports EmuDeck and RetroDECK. Both suites use their configured ROM roots and the M1 format allowlist. The ZIP includes the three pure-Python modules omitted by Decky 3.3.1 that are needed for HTML mirror indexes and quoted configuration paths, with their license. [Pinned CPython source](https://github.com/python/cpython/tree/v3.14.6/Lib)
 
 ## Install or build
 

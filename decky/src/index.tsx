@@ -23,8 +23,10 @@ const systems="nes snes gb gbc gba n64 nds psx ps2 psp gc wii dreamcast saturn g
 const label=(p:string)=>p==="emudeck"?"EmuDeck":"RetroDECK";
 const bytes=(n:number|null)=>n===null?"unknown size":(n/1048576).toFixed(2)+" MiB";
 
+const sourcePreference = "rom-cli-sd.search-source";
+
 function Content(){
-  const [screen,go]=useState("search"),[query,setQuery]=useState(""),[provider,source]=useState("archive");
+  const [screen,go]=useState("search"),[query,setQuery]=useState(""),[provider,setProvider]=useState(()=>localStorage.getItem(sourcePreference)==="mirror"?"mirror":"archive");
   const [filter,setFilter]=useState(""),[system,choose]=useState(""),[suite,setSuite]=useState<Suite>("emudeck");
   const [page,setPage]=useState(1),[filePage,setFilePage]=useState(1),[listPage,setListPage]=useState(1);
   const [results,setResults]=useState<Results>(),[hit,select]=useState<FileHit>(),[platforms,setPlatforms]=useState<Platform[]>([]);
@@ -71,7 +73,11 @@ function Content(){
   switch(screen){
     case "search": content=<>
       <PanelSectionRow><TextField label="Game title" description="Use Steam + X to open the keyboard." value={query} onChange={e=>setQuery(e.target.value.slice(0,80))}/></PanelSectionRow>
-      {display("Source",["archive","mirror"],provider,source)}{display("Console",["",...systems],filter,setFilter)}
+      {button("Source · "+(provider==="archive"?"Archive":"Mirror"),()=>{
+        const next=provider==="archive"?"mirror":"archive";
+        localStorage.setItem(sourcePreference,next);
+        setProvider(next);
+      },false,"search-source")}{display("Console",["",...systems],filter,setFilter)}
       {button("Search",()=>search(1,1),!query.trim())}{button("Downloads",()=>showJobs(1))}{button("Installed library",()=>library(1))}
     </>;break;
     case "results": content=<>
