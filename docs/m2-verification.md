@@ -131,3 +131,5 @@ In the live EmuDeck duplicate preview, the operator saw the existing-file warnin
 The operator confirmed that the duplicate-install button was grayed out and that reopening ROM Library showed both completed downloads. This passes the on-device duplicate-button and post-completion reopen checks. Active cancellation remains a separate test.
 
 During the 0.2.4 controller retest the Deck fetched both indexes from the loopback mirror. The operator cancelled the active RetroDECK fixture download. Job `b23651e1ab84fb9bca498fa156bc445c` reported cancelled with 2560 bytes recorded. No final fixture or transfer temporary file appeared in the NES destination, and both Nova jobs remained completed. The operator saw Confirm retry.
+
+The confirmed retry reused job `b23651e1ab84fb9bca498fa156bc445c` and completed 24592 of 24592 bytes without a recorded error. The published RetroDECK fixture matched its original SHA-256 `02ad100b04e699cc050733affe8b75030be62d7b23f1116515080ed8aac89f64`. Inspection found no transfer temporary file in the destination. Both Nova jobs remained completed, for three total jobs.
