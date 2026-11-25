@@ -129,3 +129,5 @@ The operator reported completing the EmuDeck controller launch check. In Gaming 
 In the live EmuDeck duplicate preview, the operator saw the existing-file warning for nova.nes. A subsequent read-only check found the same two completed job IDs. Both copies remained 262160 bytes and matched the previously verified SHA-256. The operator has not yet reported the physical focus or disabled state of the confirmation button.
 
 The operator confirmed that the duplicate-install button was grayed out and that reopening ROM Library showed both completed downloads. This passes the on-device duplicate-button and post-completion reopen checks. Active cancellation remains a separate test.
+
+During the 0.2.4 controller retest the Deck fetched both indexes from the loopback mirror. The operator cancelled the active RetroDECK fixture download. Job `b23651e1ab84fb9bca498fa156bc445c` reported cancelled with 2560 bytes recorded. No final fixture or transfer temporary file appeared in the NES destination, and both Nova jobs remained completed. The operator saw Confirm retry.
