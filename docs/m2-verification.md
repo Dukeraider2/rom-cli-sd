@@ -127,3 +127,5 @@ The operator confirmed that Nova ran in RetroDECK on the physical Deck in Gaming
 The operator reported completing the EmuDeck controller launch check. In Gaming Mode, ES-DE logged RetroArch invoking the Mesen core with the verified microSD copy of nova.nes. The log confirms the launch command. Movement and the return screen were not independently observed. The queue baseline before duplicate and reopen checks was two completed jobs: EmuDeck `81303077251774b5971728b6a9ac2738` and RetroDECK `74d6427a5ff3d58c660e31f47ea76c61`.
 
 In the live EmuDeck duplicate preview, the operator saw the existing-file warning for nova.nes. A subsequent read-only check found the same two completed job IDs. Both copies remained 262160 bytes and matched the previously verified SHA-256. The operator has not yet reported the physical focus or disabled state of the confirmation button.
+
+The operator confirmed that the duplicate-install button was grayed out and that reopening ROM Library showed both completed downloads. This passes the on-device duplicate-button and post-completion reopen checks. Active cancellation remains a separate test.
