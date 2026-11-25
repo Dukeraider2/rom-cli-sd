@@ -50,10 +50,10 @@ test("controller workflow previews a destination and requires a separate activat
 });
 
 
-test("Mirror remains selected after reopening and is used for the search",async()=>{
+test("Search title, source and NES filter survive selection and reopening",async()=>{
   const storage=new MapStorage(),requests=[];
   const handler=async(version,op,args)=>{
-    requests.push([op,args.provider]);
+    requests.push([op,args.provider,args.system,args.query]);
     return {ok:true,data:{results:[]}};
   };
   let view;
@@ -61,12 +61,24 @@ test("Mirror remains selected after reopening and is used for the search",async(
   const button=label=>view.root.findAllByType("ButtonItem").find(b=>b.props.children===label);
   await mount();
   await act(async()=>button("Source · Archive").props.onClick());
-  assert.ok(button("Source · Mirror"));
+  await act(async()=>view.root.findByType("TextField").props.onChange({target:{value:"Cancel Test"}}));
+  await act(async()=>button("Console · All systems").props.onClick());
+  await act(async()=>button("NES").props.onClick());
+  const verifyForm=()=>{
+    assert.ok(button("Source · Mirror"));
+    assert.ok(button("Console · NES"));
+    assert.equal(view.root.findByType("TextField").props.value,"Cancel Test");
+  };
+  verifyForm();
   await act(async()=>view.unmount());
   await mount();
-  assert.ok(button("Source · Mirror"));
-  await act(async()=>view.root.findByType("TextField").props.onChange({target:{value:"Cancel Test"}}));
+  verifyForm();
   await act(async()=>button("Search").props.onClick());
-  assert.deepEqual(requests,[["search","mirror"]]);
+  assert.deepEqual(requests,[["search","mirror","nes","Cancel Test"]]);
+  await act(async()=>button("Back").props.onClick());
+  await act(async()=>button("Console · NES").props.onClick());
+  await act(async()=>button("All systems").props.onClick());
+  await act(async()=>button("Search").props.onClick());
+  assert.deepEqual(requests[1],["search","mirror",null,"Cancel Test"]);
   await act(async()=>view.unmount());
 });

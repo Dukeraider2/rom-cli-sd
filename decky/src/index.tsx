@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState,ReactNode} from "react";
-import {ButtonItem,DropdownItem,Focusable,PanelSection,PanelSectionRow,TextField,staticClasses} from "@decky/ui";
+import {ButtonItem,Focusable,PanelSection,PanelSectionRow,TextField,staticClasses} from "@decky/ui";
 import {callable,definePlugin} from "@decky/api";
 import {previous,jobAction} from "./navigation.js";
 
@@ -25,9 +25,16 @@ const bytes=(n:number|null)=>n===null?"unknown size":(n/1048576).toFixed(2)+" Mi
 
 const sourcePreference = "rom-cli-sd.search-source";
 
+const titlePreference = "rom-cli-sd.search-title";
+const consolePreference = "rom-cli-sd.search-console";
+const consoleLabel = (value:string)=>value ? value.toUpperCase() : "All systems";
+
 function Content(){
-  const [screen,go]=useState("search"),[query,setQuery]=useState(""),[provider,setProvider]=useState(()=>localStorage.getItem(sourcePreference)==="mirror"?"mirror":"archive");
-  const [filter,setFilter]=useState(""),[system,choose]=useState(""),[suite,setSuite]=useState<Suite>("emudeck");
+  const [screen,go]=useState("search"),[query,setQuery]=useState(()=>(localStorage.getItem(titlePreference) ?? "").slice(0,80)),[provider,setProvider]=useState(()=>localStorage.getItem(sourcePreference)==="mirror"?"mirror":"archive");
+  const [filter,setFilter]=useState(()=>{
+    const saved=localStorage.getItem(consolePreference) ?? "";
+    return systems.includes(saved)?saved:"";
+  }),[system,choose]=useState(""),[suite,setSuite]=useState<Suite>("emudeck");
   const [page,setPage]=useState(1),[filePage,setFilePage]=useState(1),[listPage,setListPage]=useState(1);
   const [results,setResults]=useState<Results>(),[hit,select]=useState<FileHit>(),[platforms,setPlatforms]=useState<Platform[]>([]);
   const [preview,setPreview]=useState<Preview>(),[jobs,setJobs]=useState<Job[]>([]),[games,setGames]=useState<Game[]>([]);
@@ -66,20 +73,26 @@ function Content(){
   function library(p:number){
     load(()=>call<Game[]>("list_games",{page:p}),r=>{setGames(r);setListPage(p);go("library");});
   }
-  function display(name:string,data:string[],value:string,change:(s:string)=>void){
-    return <PanelSectionRow><DropdownItem label={name} selectedOption={value} rgOptions={data.map(s=>({data:s,label:s||"All systems"}))} onChange={o=>change(o.data)}/></PanelSectionRow>;
-  }
   let content:ReactNode;
   switch(screen){
     case "search": content=<>
-      <PanelSectionRow><TextField label="Game title" description="Use Steam + X to open the keyboard." value={query} onChange={e=>setQuery(e.target.value.slice(0,80))}/></PanelSectionRow>
+      <PanelSectionRow><TextField label="Game title" description="Use Steam + X to open the keyboard." value={query} onChange={e=>{
+        const title=e.target.value.slice(0,80);
+        localStorage.setItem(titlePreference,title);
+        setQuery(title);
+      }}/></PanelSectionRow>
       {button("Source · "+(provider==="archive"?"Archive":"Mirror"),()=>{
         const next=provider==="archive"?"mirror":"archive";
         localStorage.setItem(sourcePreference,next);
         setProvider(next);
-      },false,"search-source")}{display("Console",["",...systems],filter,setFilter)}
+      },false,"search-source")}{button("Console · "+consoleLabel(filter),()=>go("filter"),false,"search-console")}
       {button("Search",()=>search(1,1),!query.trim())}{button("Downloads",()=>showJobs(1))}{button("Installed library",()=>library(1))}
     </>;break;
+    case "filter": content=["",...systems].map(value=>button(consoleLabel(value),()=>{
+      localStorage.setItem(consolePreference,value);
+      setFilter(value);
+      go("search");
+    }));break;
     case "results": content=<>
       {!results?.results.length&&<p>No supported files on this page.</p>}
       {results?.results.map(r=>button(r.title+" · "+r.name,()=>{select(r);go("system");},false,r.id))}
@@ -112,7 +125,7 @@ function Content(){
     case "report": content=<><p>{report?.count} findings</p>{report?.findings.map((f,i)=><p key={i}>{f.status} · {f.path||f.reason}</p>)}</>;break;
   }
   return <Focusable flow-children="vertical" onCancel={e=>{if(screen!=="search"){e.stopPropagation();back();}}} style={{overflowWrap:"anywhere"}}>
-    <PanelSection title={{search:"Find a game",results:"Search results",system:"Choose console",destination:"Choose destination",confirm:"Confirm download",jobs:"Downloads",library:"Installed library",game:"Installation details",report:"Library check"}[screen]}>
+    <PanelSection title={{search:"Find a game",filter:"Filter by console",results:"Search results",system:"Choose console",destination:"Choose destination",confirm:"Confirm download",jobs:"Downloads",library:"Installed library",game:"Installation details",report:"Library check"}[screen]}>
       {screen!=="search"&&<PanelSectionRow><ButtonItem layout="below" onClick={back}>Back</ButtonItem></PanelSectionRow>}
       {content}{busy&&<p role="status">Loading…</p>}{error&&<p role="alert">{error}</p>}
     </PanelSection></Focusable>;
