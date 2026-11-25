@@ -128,3 +128,5 @@ With the active seat running gamescope, the live Decky queue showed completed NE
 The operator confirmed that Nova ran in RetroDECK on the physical Deck in Gaming Mode. At the follow-up check the seat still reported gamescope, and neither the ROM process nor the RetroDECK Flatpak was running. Movement and the screen reached on exit were not independently confirmed.
 
 The operator reported completing the EmuDeck controller launch check. In Gaming Mode, ES-DE logged RetroArch invoking the Mesen core with the verified microSD copy of nova.nes. The log confirms the launch command. Movement and the return screen were not independently observed. The queue baseline before duplicate and reopen checks was two completed jobs: EmuDeck `81303077251774b5971728b6a9ac2738` and RetroDECK `74d6427a5ff3d58c660e31f47ea76c61`.
+
+In the live EmuDeck duplicate preview, the operator saw the existing-file warning for nova.nes. A subsequent read-only check found the same two completed job IDs. Both copies remained 262160 bytes and matched the previously verified SHA-256. The operator has not yet reported the physical focus or disabled state of the confirmation button.
