@@ -1,0 +1,42 @@
+{
+  "measurement": "physical_deck_loopback_disposable_fixture",
+  "candidate": "b540924",
+  "samples_per_volume": 1,
+  "power": "external power connected",
+  "volumes": {
+    "ssd": {
+      "host": "Linux-7.2.7-valve2-2-neptune-72-g31504582a073-x86_64-with-glibc2.43",
+      "python": "3.14.6",
+      "size": 8388608,
+      "seconds": 0.096,
+      "mib_per_s": 83.54,
+      "cpu_s": 0.071,
+      "cpu_one_core_pct": 74.4,
+      "rss_baseline": 29888512,
+      "rss_sampled_peak": 32374784,
+      "process_write_bytes": 9080832,
+      "queue_write_statements": 11,
+      "search_rpc_ms": 2.21,
+      "progress_rpc_median_ms": 0.628,
+      "idle_worker": false,
+      "idle_1s_cpu_ms": 0.12
+    },
+    "microsd": {
+      "host": "Linux-7.2.7-valve2-2-neptune-72-g31504582a073-x86_64-with-glibc2.43",
+      "python": "3.14.6",
+      "size": 8388608,
+      "seconds": 0.391,
+      "mib_per_s": 20.45,
+      "cpu_s": 0.114,
+      "cpu_one_core_pct": 29.1,
+      "rss_baseline": 29831168,
+      "rss_sampled_peak": 33374208,
+      "process_write_bytes": 9080832,
+      "queue_write_statements": 11,
+      "search_rpc_ms": 2.26,
+      "progress_rpc_median_ms": 0.481,
+      "idle_worker": false,
+      "idle_1s_cpu_ms": 0.13
+    }
+  }
+}
