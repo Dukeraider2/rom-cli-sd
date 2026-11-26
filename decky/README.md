@@ -1,10 +1,10 @@
 # ROM Library for Decky
 
-ROM Library 0.2.5 is a hardware-validation build for a Steam Deck with an existing Decky installation. It uses the logged-in user's M1 catalog and supports EmuDeck and RetroDECK. Both suites use their configured ROM roots and the M1 format allowlist. The ZIP includes the three pure-Python modules omitted by Decky 3.3.1 that are needed for HTML mirror indexes and quoted configuration paths, with their license. [Pinned CPython source](https://github.com/python/cpython/tree/v3.14.6/Lib)
+ROM Library 0.3.0-rc1 is a release candidate for a Steam Deck with an existing Decky installation. It uses the logged-in user's M1 catalog and supports EmuDeck and RetroDECK. Both suites use their configured ROM roots and the M1 format allowlist. The ZIP includes the three pure-Python modules omitted by Decky 3.3.1 that are needed for HTML mirror indexes and quoted configuration paths, with their license. [Pinned CPython source](https://github.com/python/cpython/tree/v3.14.6/Lib)
 
 ## Install or build
 
-Download the feature branch's **rom-library-m2** CI artifact. Extract the outer GitHub artifact once and select the inner `rom-library-m2.zip` in Decky Settings → Developer → Install plugin from ZIP. Enable Decky developer settings if necessary. Use the same ZIP when testing a locally built copy. The plugin requests no root flag. The [official installation guidance](https://github.com/SteamDeckHomebrew/decky-loader) and [Decky sideloading notes](https://github.com/SteamDeckHomebrew/wiki/blob/main/user-guide/plugin-safety.md) describe the loader and external ZIP workflow.
+Download the release pull request's **rom-library-m2** CI artifact. Extract the outer GitHub artifact once and select the inner `rom-library-m2.zip` in Decky Settings → Developer → Install plugin from ZIP. Enable Decky developer settings if necessary. Use the same ZIP when testing a locally built copy. The plugin requests no root flag. The [official installation guidance](https://github.com/SteamDeckHomebrew/decky-loader) and [Decky sideloading notes](https://github.com/SteamDeckHomebrew/wiki/blob/main/user-guide/plugin-safety.md) describe the loader and external ZIP workflow.
 
 From the repository root, with Node 22+, npm and Python available:
 
@@ -67,3 +67,7 @@ Voice and TTS remain M3. See the repository's M2 verification report for host me
 ## Hardware-validation build
 
 The physical SSH session and tested candidate digest are recorded in the [hardware report](../docs/m2-steamdeck-hardware.md). If removable storage disappears during staging cleanup, restore the original medium, unload the plugin, verify the worker exited and reconcile the original attempt before retrying. The installed suites may already manage a personal library. Use the isolated test fixture for command-line verification and the official ZIP installation screen for loader acceptance.
+
+## Upgrade and removal
+
+Let active downloads finish and record the current plugin version. Back up your catalog and plugin settings. Install the replacement runtime ZIP from Decky Settings, reopen ROM Library, and check Installed library and Downloads. To remove the plugin, use Decky Settings → Plugins → ROM Library → Uninstall. Keep your ROM roots, saves, catalog and suite configuration. Candidate lifecycle checks are tracked in docs/RELEASE_CHECKLIST.md.
