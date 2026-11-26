@@ -51,7 +51,12 @@ jobs:
                   subprocess.run([sys.executable, "-I", "-B", str(Path("tests/check_decky_runtime.py").resolve()),
                                   str(Path(tmp) / "ROM Library")], cwd=tmp, check=True)
           PY
-          sha256sum decky/rom-library-m2.zip
+          cd decky
+          sha256sum rom-library-m2.zip rom-library-m2-source.zip > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SHA256SUMS
+          path: decky/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
           name: rom-library-m2

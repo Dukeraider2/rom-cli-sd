@@ -16,7 +16,7 @@ npm --prefix decky run build
 python3 decky/package_plugin.py decky/rom-library-m2.zip --source-output decky/rom-library-m2-source.zip
 ```
 
-Install the runtime ZIP containing the frontend bundle, Python backend, M1 library and license notices. CI publishes the corresponding frontend sources, vendored Decky API source, lockfile and build configuration in the sibling **rom-library-m2-source** artifact. TypeScript uses the official Decky React components and callable API. Development dependencies and Node stay on the build machine.
+Install the runtime ZIP containing the frontend bundle, Python backend, M1 library and license notices. CI publishes the tracked project sources, tests, build configuration and dependency lockfile in the sibling **rom-library-m2-source** artifact. TypeScript uses the official Decky React components and callable API. Development dependencies and Node stay on the build machine.
 
 ## Search, install and play
 

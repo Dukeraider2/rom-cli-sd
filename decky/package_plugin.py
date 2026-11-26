@@ -1,5 +1,6 @@
 """Package the runtime plugin and, optionally, a companion source archive."""
 import argparse
+import subprocess
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 
@@ -28,8 +29,11 @@ def package(output, source_output=None):
                or (path.parent == ROOT/"library" and path.suffix == ".py")}
     write_archive(Path(output), runtime)
     if source_output:
-        files["package_plugin.py"] = DECKY/"package_plugin.py"
-        write_archive(Path(source_output), files)
+        source = Path(source_output)
+        source.parent.mkdir(parents=True, exist_ok=True)
+        tracked = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
+        sources = {name: ROOT/name for name in tracked.decode().split("\0") if name}
+        write_archive(source, sources)
 
 
 def write_archive(target, files):
